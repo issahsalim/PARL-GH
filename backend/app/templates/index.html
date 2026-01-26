@@ -1,0 +1,704 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - ParlGH Ghana Parliamentary Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Preloader for Home Page Only */
+    .preloader-wrapper {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, var(--ghana-red) 0%, var(--ghana-green) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+
+    .preloader-wrapper.hidden {
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    .preloader-content {
+        text-align: center;
+    }
+
+    .preloader-text {
+        font-size: 3.5rem;
+        font-weight: 800;
+        color: var(--ghana-white);
+        letter-spacing: 8px;
+        text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        margin-bottom: 30px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .preloader-char {
+        display: inline-block;
+        opacity: 0;
+        animation: charReveal 0.8s ease forwards;
+        color: var(--ghana-yellow);
+    }
+
+    @keyframes charReveal {
+        0% {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* .preloader-icon {
+        font-size: 2.5rem;
+        color: var(--ghana-yellow);
+        margin-bottom: 20px;
+        animation: spinIcon 3s linear infinite;
+    }
+
+    .preloader-icon.hidden {
+        display: none;
+    } */
+
+    @keyframes spinIcon {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .preloader-bar {
+        width: 200px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 2px;
+        margin: 30px auto 0;
+        overflow: hidden;
+    }
+
+    .preloader-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--ghana-yellow), var(--ghana-white));
+        border-radius: 2px;
+        animation: fillBar 3s ease-in-out infinite;
+    }
+
+    @keyframes fillBar {
+        0% {
+            width: 0%;
+        }
+        50% {
+            width: 80%;
+        }
+        100% {
+            width: 100%;
+        }
+    }
+
+    .preloader-subtitle {
+        color: var(--ghana-white);
+        font-size: 0.95rem;
+        margin-top: 30px;
+        opacity: 0.9;
+        letter-spacing: 2px;
+        animation: fadeInOut 3s ease-in-out infinite;
+    }
+
+    @keyframes fadeInOut {
+        0%, 100% {
+            opacity: 0.6;
+        }
+        50% {
+            opacity: 1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .preloader-text {
+            font-size: 2.5rem;
+            letter-spacing: 5px;
+        }
+
+        /* .preloader-icon {
+            font-size: 2rem;
+        } */
+
+        .preloader-bar {
+            width: 150px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .preloader-text {
+            font-size: 2rem;
+            letter-spacing: 4px;
+        }
+
+        /* .preloader-icon {
+            font-size: 1.5rem;
+        } */ 
+
+        .preloader-subtitle {
+            font-size: 0.85rem;
+        }
+    }
+
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, var(--ghana-red) 0%, var(--ghana-green) 100%);
+        color: var(--ghana-white);
+        padding: 80px 20px;
+        text-align: center;
+        border-radius: 12px;
+        margin-bottom: 60px;
+        box-shadow: 0 12px 40px rgba(206, 17, 38, 0.25);
+    }
+
+    .hero-section h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 20px;
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .hero-section p {
+        font-size: 1.3rem;
+        margin-bottom: 30px;
+        opacity: 0.95;
+        line-height: 1.8;
+    }
+
+    .cta-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .cta-button {
+        background: var(--ghana-yellow);
+        color: var(--ghana-red);
+        padding: 15px 35px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .cta-button:hover {
+        background: var(--ghana-white);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .cta-button-secondary {
+        background: transparent;
+        color: var(--ghana-white);
+        border: 2px solid var(--ghana-white);
+    }
+
+    .cta-button-secondary:hover {
+        background: var(--ghana-white);
+        color: var(--ghana-red);
+    }
+
+    /* Features Section */
+    .features-section {
+        margin-bottom: 60px;
+    }
+
+    .section-title {
+        text-align: center;
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--ghana-black);
+        margin-bottom: 50px;
+        padding-bottom: 20px;
+        border-bottom: 4px solid var(--ghana-red);
+        display: inline-block;
+        width: 100%;
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .feature-card {
+        background: var(--ghana-white);
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        text-align: center;
+        border-top: 5px solid var(--ghana-red);
+    }
+
+    .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        border-top-color: var(--ghana-green);
+    }
+
+    .feature-icon {
+        font-size: 3rem;
+        color: var(--ghana-red);
+        margin-bottom: 15px;
+    }
+
+    .feature-card h3 {
+        color: var(--ghana-black);
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+
+    .feature-card p {
+        color: #666;
+        line-height: 1.7;
+        font-size: 0.95rem;
+    }
+
+    /* Leadership Section */
+    .leadership-section {
+        margin-bottom: 60px;
+    }
+
+    .leaders-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 30px;
+        margin-top: 40px;
+    }
+
+    .leader-card {
+        background: var(--ghana-white);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .leader-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .leader-image {
+        width: 100%;
+        height: 280px;
+        background: linear-gradient(135deg, var(--ghana-red) 0%, var(--ghana-green) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+        color: var(--ghana-yellow);
+    }
+
+    .leader-info {
+        padding: 20px;
+        text-align: center;
+    }
+
+    .leader-name {
+        color: var(--ghana-red);
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .leader-title {
+        color: var(--ghana-green);
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .leader-description {
+        color: #666;
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    /* Stats Section */
+    .stats-section {
+        background: linear-gradient(135deg, var(--ghana-green) 0%, var(--ghana-red) 100%);
+        color: var(--ghana-white);
+        padding: 50px 30px;
+        border-radius: 12px;
+        margin-bottom: 60px;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 30px;
+        text-align: center;
+    }
+
+    .stat-item h3 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--ghana-yellow);
+        margin-bottom: 10px;
+    }
+
+    .stat-item p {
+        font-size: 1.05rem;
+        opacity: 0.95;
+    }
+
+    /* Parliament Info Section */
+    .parliament-info {
+        background: var(--ghana-white);
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 60px;
+        border-left: 5px solid var(--ghana-red);
+    }
+
+    .parliament-info h2 {
+        color: var(--ghana-red);
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+
+    .parliament-info p {
+        color: #555;
+        line-height: 1.8;
+        font-size: 1rem;
+        margin-bottom: 15px;
+    }
+
+    .info-highlight {
+        background: #f0f9ff;
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid var(--ghana-green);
+        margin-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .hero-section {
+            padding: 50px 15px;
+        }
+
+        .hero-section h1 {
+            font-size: 2rem;
+        }
+
+        .hero-section p {
+            font-size: 1.05rem;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+        }
+
+        .cta-buttons {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .cta-button {
+            justify-content: center;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .stat-item h3 {
+            font-size: 2rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hero-section h1 {
+            font-size: 1.5rem;
+        }
+
+        .hero-section p {
+            font-size: 0.95rem;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .parliament-info {
+            padding: 25px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Preloader for Home Page -->
+<div class="preloader-wrapper" id="preloader">
+    <div class="preloader-content">
+        <!-- <div class="preloader-icon" id="preloaderIcon">
+            <i class="fas fa-building"></i>
+        </div> -->
+        <div class="preloader-text">
+            <span class="preloader-char">P</span>
+            <span class="preloader-char">a</span>
+            <span class="preloader-char">r</span>
+            <span class="preloader-char">l</span>
+            <span class="preloader-char">G</span>
+            <span class="preloader-char">H</span>
+        </div>
+        <div class="preloader-bar">
+            <div class="preloader-bar-fill"></div>
+        </div>
+        <!-- <div class="preloader-subtitle">Loading Parliamentary Data</div> -->
+    </div>
+</div>
+
+<!-- Hero Section -->
+<div class="hero-section">
+    <h1>Welcome to ParlGH</h1>
+    <p>Your gateway to Ghana's parliamentary debates, proceedings, and
+        legislative decisions</p>
+    <div class="cta-buttons">
+        <a href="{% url 'search' %}" class="cta-button">
+            <i class="fas fa-search"></i> Start Searching
+        </a>
+        <a href="{% url 'session_list' %}"
+            class="cta-button cta-button-secondary">
+            <i class="fas fa-calendar-alt"></i> Browse Sessions
+        </a>
+    </div>
+</div>
+
+<!-- Features Section -->
+<section class="features-section">
+    <h2 class="section-title">Key Features</h2>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-search"></i></div>
+            <h3>Advanced Search</h3>
+            <p>Search parliamentary debates by keywords, speakers, topics, and
+                dates. Find exactly what you're looking for quickly and
+                efficiently.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-calendar-alt"></i></div>
+            <h3>Session Archives</h3>
+            <p>Access comprehensive records of all parliamentary sessions.
+                Browse debates chronologically or by topic of interest.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-chart-bar"></i></div>
+            <h3>Analytics Dashboard</h3>
+            <p>Visualize parliamentary data through interactive charts and
+                statistics. Understand debate patterns and speaker
+                contributions.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-filter"></i></div>
+            <h3>Smart Filtering</h3>
+            <p>Filter debates by speaker, topic, session date, and more. Narrow
+                down results to find relevant parliamentary proceedings.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-highlighter"></i></div>
+            <h3>Text Highlighting</h3>
+            <p>Search terms are automatically highlighted in debate transcripts.
+                Focus on relevant passages quickly.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+            <h3>Mobile Friendly</h3>
+            <p>Access parliamentary records on any device. Fully responsive
+                design works seamlessly on phones, tablets, and desktops.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Section -->
+<section class="stats-section">
+    <div class="stats-grid">
+        <div class="stat-item">
+            <h3><span class="counter"
+                    data-target="{{ total_segments }}">0</span></h3>
+            <p>Debate Segments</p>
+        </div>
+        <div class="stat-item">
+            <h3><span class="counter"
+                    data-target="{{ total_sessions }}">0</span></h3>
+            <p>Parliamentary Sessions</p>
+        </div>
+        <div class="stat-item">
+            <h3><span class="counter"
+                    data-target="{{ total_speakers }}">0</span></h3>
+            <p>Speakers</p>
+        </div>
+        <div class="stat-item">
+            <h3><span class="counter"
+                    data-target="{{ total_topics }}">0</span></h3>
+            <p>Discussion Topics</p>
+        </div>
+    </div>
+</section>
+
+<!-- Leadership Section -->
+<section class="leadership-section">
+    <h2 class="section-title">Ghana's Parliamentary Leadership</h2>
+    <div class="leaders-grid">
+        <div class="leader-card">
+            <div class="leader-image"> 
+                <i class="fas fa-user-tie"></i>
+            </div>
+            <div class="leader-info">
+                <div class="leader-name">President of Ghana</div>
+                <div class="leader-title">Executive Leadership</div>
+                <div class="leader-description">Head of State and Government
+                    responsible for executing the laws passed by
+                    Parliament</div>
+            </div>
+        </div>
+
+        <div class="leader-card">
+            <div class="leader-image">
+                <i class="fas fa-gavel"></i>
+            </div>
+            <div class="leader-info">
+                <div class="leader-name">Speaker of Parliament</div>
+                <div class="leader-title">Legislative Leadership</div>
+                <div class="leader-description">Presides over parliamentary
+                    proceedings and ensures orderly conduct of debates and
+                    votes</div>
+            </div>
+        </div>
+
+        <div class="leader-card">
+            <div class="leader-image">
+                <i class="fas fa-landmark"></i>
+            </div>
+            <div class="leader-info">
+                <div class="leader-name">Parliament of Ghana</div>
+                <div class="leader-title">Legislative Body</div>
+                <div class="leader-description">Unicameral parliament with 275
+                    members elected from various constituencies across
+                    Ghana</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Parliament Information Section -->
+<section class="parliament-info">
+    <h2><i class="fas fa-building"></i> About the Parliament of Ghana</h2>
+    <p>
+        The Parliament of Ghana is the legislative branch of the Government of
+        Ghana. It is a unicameral legislature consisting of 275 members who are
+        elected to serve four-year terms. The Parliament is responsible for
+        enacting laws, approving the national budget, and providing oversight of
+        the executive branch.
+    </p>
+    <p>
+        The Parliament of Ghana was first established as a legislative body
+        during the independence of Ghana in 1957. Since then, it has evolved
+        through various constitutional amendments and political changes, playing
+        a crucial role in Ghana's democratic development.
+    </p>
+
+    <div class="info-highlight">
+        <h4 style="color: var(--ghana-red); margin-bottom: 10px;"><i
+                class="fas fa-info-circle"></i> Did You Know?</h4>
+        <p style="margin: 0;">
+            The Parliament of Ghana is housed in a modern complex located in
+            Osu, Accra, featuring state-of-the-art facilities for legislative
+            debates, committee meetings, and public engagement.
+        </p>
+    </div>
+</section>
+
+<script>
+    // Counter animation function
+    function animateCounters() {
+        const counters = document.querySelectorAll('.counter');
+        
+        counters.forEach(counter => {
+            const target = parseInt(counter.getAttribute('data-target'));
+            const duration = 2000; // 2 seconds
+            const increment = target / (duration / 16); // 60fps
+            let current = 0;
+            
+            const updateCounter = () => {
+                current += increment;
+                if (current < target) {
+                    counter.textContent = Math.floor(current);
+                    requestAnimationFrame(updateCounter);
+                } else {
+                    counter.textContent = target; 
+                }
+            };
+            
+            updateCounter();
+        });
+    }
+    
+    // Start animation when page loads
+    window.addEventListener('load', animateCounters);
+</script>
+
+<script>
+    // Preloader functionality for home page only
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate characters on preloader
+        const chars = document.querySelectorAll('.preloader-char');
+        chars.forEach((char, index) => {
+            char.style.animationDelay = (index * 0.15) + 's';
+        });
+
+        // Hide icon after 3 seconds
+        // setTimeout(function() {
+        //     const icon = document.getElementById('preloaderIcon');
+        //     if (icon) {
+        //         icon.classList.add('hidden');
+        //     }
+        // }, 3000);
+
+        // Wait 3 seconds then hide preloader and start counter animation
+        setTimeout(function() {
+            const preloader = document.getElementById('preloader');
+            if (preloader) {
+                preloader.classList.add('hidden');
+            }
+            // Start counter animation after preloader hides
+            animateCounters();
+        }, 3000);
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Summary Details - ParlGH{% endblock %}
+<style>
+    :root{
+        --ghana-red:#CE1126;
+        --ghana-green:#007857;
+        --ghana-yellow:#FCD116;
+    }
+</style>
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a
+                            href="{% url 'home' %}">Home</a></li>
+                    <li class="breadcrumb-item"><a
+                            href="{% url 'summaries_list' %}">Summaries</a></li>
+                    <li class="breadcrumb-item active">{{summary.get_content_type_display }}</li>
+                </ol>
+            </nav>
+
+            <!-- Main Summary Card -->
+            <div class="card shadow-lg border-0 mb-4">
+                <div class="card-header bg-gradient"
+                    style="background: linear-gradient(90deg, var(--ghana-red) 0%, var(--ghana-green) 100%);">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h2 class="text-white mb-2">
+                                <i class="fas fa-file-alt"></i> Summary Details
+                            </h2>
+                            <small class="text-light">Created: {{summary.created_at|date:"F j, Y \a\t H:i" }} by
+                                {{ summary.created_by }}</small>
+                        </div>
+                        <div class="col-auto">
+                            <span class="badge bg-light text-dark"
+                                style="font-size: 0.9rem; padding: 10px 15px;">
+                                <i class="fas fa-tag"></i> {{summary.get_content_type_display }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    <!-- Statistics Row -->
+                    <div class="row mb-4 g-3">
+                        <div class="col-sm-6 col-md-3">
+                            <div class="text-center p-3 rounded"
+                                style="background: #f0f9ff;">
+                                <div
+                                    style="font-size: 2rem; font-weight: bold; color: var(--ghana-red);">{{summary.original_word_count }}</div>
+                                <div class="small text-muted">Original
+                                    Words</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-3">
+                            <div class="text-center p-3 rounded"
+                                style="background: #f0fff0;">
+                                <div
+                                    style="font-size: 2rem; font-weight: bold; color: var(--ghana-green);">{{summary.summary_word_count }}</div>
+                                <div class="small text-muted">Summary
+                                    Words</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-3">
+                            <div class="text-center p-3 rounded"
+                                style="background: #fffbf0;">
+                                <div
+                                    style="font-size: 2rem; font-weight: bold; color: var(--ghana-yellow);">{{summary.reduction_percentage }}%</div>
+                                <div class="small text-muted">Reduction</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-3">
+                            <div class="text-center p-3 rounded"
+                                style="background: #f5f5f5;">
+                                <div
+                                    style="font-size: 1.5rem; font-weight: bold;">{{summary.created_at|date:"M d" }}</div>
+                                <div class="small text-muted">{{summary.created_at|date:"Y" }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Summary Text -->
+                    <div class="mb-4">
+                        <h5 class="mb-3"><i
+                                class="fas fa-lightbulb text-warning"></i>
+                            Summary</h5>
+                        <div class="p-4 rounded"
+                            style="background: #fafafa; border-left: 4px solid var(--ghana-red);">
+                            <p
+                                style="line-height: 1.8; font-size: 1.05rem; margin: 0;">{{summary.summary_text }}</p>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Structured Information -->
+                    <div class="row">
+                        <!-- Speakers -->
+                        <div class="col-lg-4 mb-3">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header text-white" style="background: var(--ghana-red);">
+                                    <h6 class="mb-0"><i
+                                            class="fas fa-microphone"></i>
+                                             Speakers Mentioned</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if summary.speakers_mentioned %}
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% for speaker in summary.speakers_mentioned %}
+                                        <span
+                                            class="badge bg-info-subtle text-info"
+                                            style="font-size: 0.85rem;">
+                                            <i class="fas fa-user-tie"></i> {{ speaker }}
+                                        </span>
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                    <p class="text-muted small mb-0">No speakers
+                                        extracted</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Motions -->
+                        <div class="col-lg-4 mb-3">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0"><i
+                                            class="fas fa-scroll"></i> Motions
+                                        Discussed</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if summary.motions %}
+                                    <ul class="list-unstyled">
+                                        {% for motion in summary.motions %}
+                                        <li class="mb-2">
+                                            <small class="text-wrap">
+                                                <i
+                                                    class="fas fa-check text-warning"></i>
+                                                {{ motion|truncatewords:15 }}
+                                            </small>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% else %}
+                                    <p class="text-muted small mb-0">No motions
+                                        extracted</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Outcomes -->
+                        <div class="col-lg-4 mb-3">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i
+                                            class="fas fa-check-circle"></i>
+                                        Outcomes/Decisions</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if summary.outcomes %}
+                                    <ul class="list-unstyled">
+                                        {% for outcome in summary.outcomes %}
+                                        <li class="mb-2">
+                                            <small class="text-wrap">
+                                                <i
+                                                    class="fas fa-thumbs-up text-success"></i>
+                                                <strong>{{ outcome|truncatewords:15 }}</strong>
+                                            </small>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% else %}
+                                    <p class="text-muted small mb-0">No outcomes
+                                        extracted</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Related Content -->
+            {% if summary.session or summary.debate_segment %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="fas fa-link"></i> Related
+                        Content</h6>
+                </div>
+                <div class="card-body">
+                    {% if summary.session %}
+                    <div class="mb-3">
+                        <h6>Parliamentary Session</h6>
+                        <p class="mb-2">
+                            <strong>{{ summary.session.title }}</strong><br>
+                            <small class="text-muted">Date: {{summary.session.sitting_date }}</small>
+                        </p>
+                        <a href="{% url 'session_detail' summary.session.id %}"
+                            class="btn btn-sm btn-dark">
+                            <i class="fas fa-eye"></i> View Session
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {% if summary.debate_segment %}
+                    <div class="mb-3">
+                        <h6>Debate Segment</h6>
+                        <p class="mb-2">
+                            <strong>{{ summary.debate_segment.speaker}}</strong><br>
+                            <small class="text-muted">Session: {{ summary.debate_segment.session.title }}</small>
+                        </p>
+                        <a
+                            href="{% url 'segment_detail' summary.debate_segment.id %}"
+                            class="btn btn-sm btn-info">
+                            <i class="fas fa-eye"></i> View Segment
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Original Text Section -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <button
+                        class="btn btn-link text-decoration-none w-100 text-start text-dark"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#originalText">
+                        <i class="fas fa-chevron-down me-2"></i>View Original
+                        Text
+                    </button>
+                </div>
+                <div class="collapse" id="originalText">
+                    <div class="card-body bg-light">
+                        <pre
+                            style="max-height: 500px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word;color:white; background: rgb(18, 17, 17); padding: 20px; border-radius: 5px;">{{ summary.original_text }}</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row mb-5">
+                <div class="col-md-4">
+                    <a href="{% url 'summarize_text' %}"
+                        class="btn  text-white w-100" style="background-color: var(--ghana-green);">
+                        <i class="fas fa-plus"></i> New Summary
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="{% url 'summaries_list' %}"
+                        class="btn w-100" style="background-color: var(--ghana-red);">
+                        <i class="fas fa-list"></i> All Summaries
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="{% url 'home' %}"
+                        class="btn w-100" style="background-color: var(--ghana-yellow);">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --ghana-red: #CE1126;
+        --ghana-yellow: #FCD116;
+        --ghana-green: #007857;
+    }
+
+    .bg-gradient {
+        background-attachment: fixed;
+    }
+
+    .card {
+        border-radius: 10px;
+    }
+
+    .bg-info-subtle {
+        background-color: rgba(13, 110, 253, 0.1) !important;
+    }
+</style>
+{% endblock %}

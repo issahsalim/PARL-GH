@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}All Summaries - ParlGH{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-lg-11 mx-auto">
+            <!-- Header -->
+            <div class="card shadow-lg border-0 mb-4">
+                <div class="card-header bg-gradient"
+                    style="background: linear-gradient(90deg, var(--ghana-red) 0%, var(--ghana-green) 100%);">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h2 class="text-white mb-0">
+                                <i class="fas fa-history"></i> Summary History
+                            </h2>
+                            <p class="text-light small mb-0">All AI-generated
+                                summaries</p>
+                        </div>
+                        <div class="col-auto">
+                            <a href="{% url 'summarize_text' %}"
+                                class="btn btn-light">
+                                <i class="fas fa-plus"></i> New Summary
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-6">
+                            <label for="typeFilter" class="form-label">Filter by
+                                Type</label>
+                            <select class="form-select" name="type"
+                                id="typeFilter">
+                                <option value>All Types</option>
+                                {% for value, label in content_types %}
+                                <option value="{{ value }}" {% if
+                                    request.GET.type == value %}selected{% endif
+                                    %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="sessionFilter" class="form-label">Filter
+                                by Session</label>
+                            <select class="form-select" name="session"
+                                id="sessionFilter">
+                                <option value>All Sessions</option>
+                                {% for session in sessions %}
+                                <option value="{{ session.id }}" {% if
+                                    request.GET.session ==
+                                    session.id|stringformat:'s' %}selected{%
+                                    endif %}>
+                                    {{ session.title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter"></i> Apply Filters
+                            </button>
+                            <a href="{% url 'summaries_list' %}"
+                                class="btn btn-secondary">
+                                <i class="fas fa-redo"></i> Reset
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Summaries List -->
+            {% if summaries %}
+            <div class="row">
+                {% for summary in summaries %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm border-0 hover-shadow">
+                        <!-- Card Header -->
+                        <div class="card-header bg-light">
+                            <div
+                                class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <span class="badge bg-info">{{summary.get_content_type_display}}</span>
+                                    <span class="badge bg-success">{{summary.reduction_percentage }}%
+                                        saved</span>
+                                </div>
+                                <small class="text-muted">{{summary.created_at|date:"M d, Y" }}</small>
+                            </div>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="card-body">
+                            <!-- Summary Preview -->
+                            <p class="card-text"
+                                style="height: 80px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
+                                {{ summary.summary_text|truncatewords:30 }}
+                            </p>
+
+                            <!-- Stats -->
+                            <div class="row text-center mb-3">
+                                <div class="col-6 border-end">
+                                    <small
+                                        class="d-block text-muted">Original</small>
+                                    <strong>{{ summary.original_word_count}}</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small
+                                        class="d-block text-muted">Summary</small>
+                                    <strong>{{ summary.summary_word_count}}</strong>
+                                </div>
+                            </div>
+
+                            <!-- Extracted Info Count -->
+                            <div
+                                class="d-flex justify-content-around mb-3 flex-wrap">
+                                {% if summary.speakers_mentioned %}
+                                <small class="text-muted">
+                                    <i class="fas fa-microphone"></i> {{summary.speakers_mentioned|length }}
+                                    speaker{{summary.speakers_mentioned|length|pluralize}}
+                                </small>
+                                {% endif %}
+
+                                {% if summary.motions %}
+                                <small class="text-muted">
+                                    <i class="fas fa-scroll"></i> {{summary.motions|length }} motion{{summary.motions|length|pluralize }}
+                                </small>
+                                {% endif %}
+
+                                {% if summary.outcomes %}
+                                <small class="text-muted">
+                                    <i class="fas fa-check-circle"></i> {{summary.outcomes|length }} outcome{{summary.outcomes|length|pluralize }}
+                                </small>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Card Footer -->
+                        <div class="card-footer bg-light border-top">
+                            <a href="{% url 'view_summary' summary.id %}"
+                                class="btn btn-sm btn-primary w-100">
+                                <i class="fas fa-eye"></i> View Details
+                            </a>
+                        </div>
+                        
+                        <!-- Related Links -->
+                        {% if summary.session %}
+                        <div class="card-footer bg-white border-top p-2"> 
+                            <small>
+                                <a
+                                    href="{% url 'session_detail' summary.session.id %}"
+                                    class="link-secondary text-decoration-none">
+                                    <i class="fas fa-link"></i> {{summary.session.title }}
+                                </a>
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if paginator.num_pages > 1 %}
+            <nav aria-label="Pagination" class="mt-5">
+                <ul class="pagination justify-content-center">
+                    {% if summaries.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="?page={{ summaries.previous_page_number }}">Previous</a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in paginator.page_range %}
+                    {% if summaries.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > summaries.number|add:'-3' and num < summaries.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num}}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if summaries.has_next %}
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="?page={{ summaries.next_page_number }}">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="?page={{ paginator.num_pages }}">Last</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <div style="font-size: 4rem; color: #ccc; margin-bottom: 1rem;">
+                    <i class="fas fa-inbox"></i>
+                </div>
+                <h3 class="text-muted mb-3">No Summaries Yet</h3>
+                <p class="text-muted mb-4">Create your first summary to get
+                    started!</p>
+                <a href="{% url 'summarize_text' %}"
+                    class="btn btn-primary btn-lg">
+                    <i class="fas fa-plus"></i> Create Your First Summary
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --ghana-red: #CE1126;
+        --ghana-yellow: #FCD116;
+        --ghana-green: #007857;
+    }
+
+    .bg-gradient {
+        background-attachment: fixed;
+    }
+
+    .card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .card.hover-shadow:hover {
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+        transform: translateY(-3px);
+    }
+
+    .card-text {
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+</style>
+{% endblock %}

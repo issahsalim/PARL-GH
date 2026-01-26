@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}ParlGH - Ghana Parliamentary
+            Portal{%endblock%}</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+            rel="stylesheet">
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+            rel="stylesheet">
+        <style>
+        /* Ghana Colors */
+        :root {
+            --ghana-red: #CE1126;
+            --ghana-yellow: #FCD116;
+            --ghana-green: #007857;
+            --ghana-black: #000000;
+            --ghana-white: #FFFFFF;
+            --ghana-light-gray: #f5f7fa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Navbar Styling */
+        .navbar-custom {
+            background: linear-gradient(90deg, var(--ghana-red) 0%, var(--ghana-green) 100%);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            padding: 0.5rem 0;
+        }
+
+        .navbar-custom .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--ghana-white) !important;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-right: 3rem;
+        }
+
+        .navbar-custom .navbar-brand i {
+            font-size: 1.8rem;
+            color: var(--ghana-yellow);
+        }
+
+        .navbar-custom .nav-link {
+            color: var(--ghana-white) !important;
+            font-weight: 500;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            padding: 8px 12px !important;
+            border-radius: 5px;
+        }
+
+        .navbar-custom .nav-link:hover {
+            background-color: rgba(252, 209, 22, 0.3);
+            color: var(--ghana-yellow) !important;
+        }
+
+        .navbar-custom .nav-link.active {
+            background-color: var(--ghana-yellow);
+            color: var(--ghana-red) !important;
+        }
+
+        .navbar-custom .navbar-toggler {
+            border: 2px solid var(--ghana-white);
+        }
+
+        .navbar-custom .navbar-toggler:focus {
+            box-shadow: 0 0 0 0.25rem rgba(252, 209, 22, 0.5);
+        }
+
+        .navbar-custom .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%23FFFFFF' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        .ghana-flag-header {
+            display: flex;
+            height: 3px;
+            background: linear-gradient(90deg, var(--ghana-red) 0%, var(--ghana-red) 33.33%, var(--ghana-yellow) 33.33%, var(--ghana-yellow) 66.66%, var(--ghana-green) 66.66%, var(--ghana-green) 100%);
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        /* Header Banner for Pages */
+        .page-header {
+            background: linear-gradient(135deg, var(--ghana-red) 0%, var(--ghana-green) 100%);
+            color: var(--ghana-white);
+            padding: 40px 20px;
+            border-radius: 12px;
+            margin-bottom: 40px;
+            box-shadow: 0 8px 32px rgba(206, 17, 38, 0.2);
+            text-align: center;
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .page-header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            margin: 0;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--ghana-black);
+            color: var(--ghana-white);
+            padding: 40px 20px;
+            margin-top: 60px;
+            border-top: 4px solid var(--ghana-red);
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .footer-section h3 {
+            color: var(--ghana-yellow);
+            font-weight: 700;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .footer-section p, .footer-section a {
+            color: #ccc;
+            font-size: 0.95rem;
+            line-height: 1.8;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .footer-section a:hover {
+            color: var(--ghana-yellow);
+        }
+
+        .footer-divider {
+            border-top: 1px solid #333;
+            margin: 20px 0;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            border-top: 1px solid #333;
+            padding-top: 20px;
+            color: #999;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .social-links a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background-color: var(--ghana-red);
+            border-radius: 50%;
+            color: var(--ghana-white) !important;
+            transition: all 0.3s ease;
+        }
+
+        .social-links a:hover {
+            background-color: var(--ghana-yellow);
+            color: var(--ghana-black) !important;
+            transform: translateY(-3px);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .page-header p {
+                font-size: 0.95rem;
+            }
+
+            .navbar-custom .navbar-brand {
+                margin-right: 1rem;
+            }
+
+            .navbar-custom .nav-link {
+                margin: 5px 0;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .navbar-custom .navbar-brand {
+                font-size: 1.2rem;
+            }
+
+            .navbar-custom .navbar-brand i {
+                font-size: 1.4rem;
+            }
+
+            .page-header {
+                padding: 25px 15px;
+            }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Preloader Styles */
+        .preloader-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--ghana-red) 0%, var(--ghana-green) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .preloader-wrapper.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .preloader-content {
+            text-align: center;
+        }
+
+        .preloader-text {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--ghana-white);
+            letter-spacing: 8px;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .preloader-char {
+            display: inline-block;
+            opacity: 0;
+            animation: charReveal 0.8s ease forwards;
+            color: var(--ghana-yellow);
+        }
+
+        @keyframes charReveal {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .preloader-icon {
+            font-size: 2.5rem;
+            color: var(--ghana-yellow);
+            margin-bottom: 20px;
+            animation: spinIcon 3s linear infinite;
+        }
+
+        @keyframes spinIcon {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .preloader-bar {
+            width: 200px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            margin: 30px auto 0;
+            overflow: hidden;
+        }
+
+        .preloader-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--ghana-yellow), var(--ghana-white));
+            border-radius: 2px;
+            animation: fillBar 3s ease-in-out infinite;
+        }
+
+        @keyframes fillBar {
+            0% {
+                width: 0%;
+            }
+            50% {
+                width: 80%;
+            }
+            100% {
+                width: 100%;
+            }
+        }
+
+        .preloader-subtitle {
+            color: var(--ghana-white);
+            font-size: 0.95rem;
+            margin-top: 30px;
+            opacity: 0.9;
+            letter-spacing: 2px;
+            animation: fadeInOut 3s ease-in-out infinite;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% {
+                opacity: 0.6;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .preloader-text {
+                font-size: 2.5rem;
+                letter-spacing: 5px;
+            }
+
+            .preloader-icon {
+                font-size: 2rem;
+            }
+
+            .preloader-bar {
+                width: 150px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .preloader-text {
+                font-size: 2rem;
+                letter-spacing: 4px;
+            }
+
+            .preloader-icon {
+                font-size: 1.5rem;
+            }
+
+            .preloader-subtitle {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+
+        {% block extra_css %}{% endblock %}
+    </head>
+    <body>
+        <!-- Ghana Flag Header -->
+        <div class="ghana-flag-header"></div>
+
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-custom">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="{% url 'home' %}">
+                    <i class="fas fa-building"></i>
+                    <span>ParlGH</span>
+                </a>
+                <button class="navbar-toggler" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false"
+                    aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a
+                                class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+                                href="{% url 'home' %}">
+                                <i class="fas fa-home"></i> Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a
+                                class="nav-link {% if request.resolver_match.url_name == 'search' %}active{% endif %}"
+                                href="{% url 'search' %}">
+                                <i class="fas fa-search"></i> Search
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a
+                                class="nav-link {% if request.resolver_match.url_name == 'session_list' %}active{% endif %}"
+                                href="{% url 'session_list' %}">
+                                <i class="fas fa-calendar-alt"></i> Sessions
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a
+                                class="nav-link {% if request.resolver_match.url_name == 'summarize_text' or request.resolver_match.url_name == 'summaries_list' %}active{% endif %}"
+                                href="{% url 'summarize_text' %}">
+                                <i class="fas fa-magic"></i> Summarize
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a
+                                class="nav-link {% if request.resolver_match.url_name == 'analytics_dashboard' %}active{% endif %}"
+                                href="{% url 'analytics_dashboard' %}">
+                                <i class="fas fa-chart-bar"></i> Analytics
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/" target="_blank">
+                                <i class="fas fa-cog"></i> Admin
+                            </a>
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="container">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <div class="container-fluid">
+                <div class="footer-content">
+                    <div class="footer-section">
+                        <h3><i class="fas fa-info-circle"></i> About ParlGH</h3>
+                        <p>ParlGH is a comprehensive parliamentary search portal
+                            providing access to Ghana's parliamentary debates,
+                            proceedings, and discussions.</p>
+                        <div class="social-links">
+                            <a href="#" title="Facebook"><i
+                                    class="fab fa-facebook-f"></i></a>
+                            <a href="#" title="Twitter"><i
+                                    class="fab fa-twitter"></i></a>
+                            <a href="#" title="LinkedIn"><i
+                                    class="fab fa-linkedin-in"></i></a>
+                            <a href="#" title="YouTube"><i
+                                    class="fab fa-youtube"></i></a>
+                        </div>
+                    </div>
+
+                    <div class="footer-section">
+                        <h3><i class="fas fa-link"></i> Quick Links</h3>
+                        <a href="{% url 'home' %}">Home</a><br>
+                        <a href="{% url 'search' %}">Search Debates</a><br>
+                        <a href="{% url 'session_list' %}">Sessions</a><br>
+                        <a href="{% url 'analytics_dashboard' %}">Analytics</a>
+                    </div>
+
+                    <div class="footer-section">
+                        <h3><i class="fas fa-building"></i> Parliament of
+                            Ghana</h3>
+                        <p>The Parliament of Ghana is the legislative body of
+                            the Republic of Ghana and is located in Accra.</p>
+                        <p><strong>Address:</strong> Osu, Accra, Ghana</p>
+                        <p><strong>Phone:</strong> +233 (0) 302 667500</p>
+                    </div>
+
+                    <div class="footer-section">
+                        <h3><i class="fas fa-envelope"></i> Contact Us</h3>
+                        <p>For inquiries about this portal or parliamentary
+                            matters:</p>
+                        <p><strong>Email:</strong> <a
+                                href="mailto:info@parliament.gh">info@parliament.gh</a></p>
+                        <p><strong>Website:</strong> <a
+                                href="https://parliament.gh"
+                                target="_blank">parliament.gh</a></p>
+                    </div>
+                </div>
+
+                <div class="footer-divider"></div>
+
+                <div class="footer-bottom">
+                    <p>&copy; 2025 ParlGH - Ghana Parliamentary Portal. All
+                        rights reserved.</p>
+                    <p style="margin-top: 10px; font-size: 0.9rem;">
+                        <a href="#"
+                            style="color: #999; text-decoration: none; margin: 0 10px;">Privacy
+                            Policy</a> |
+                        <a href="#"
+                            style="color: #999; text-decoration: none; margin: 0 10px;">Terms
+                            of Service</a> |
+                        <a href="#"
+                            style="color: #999; text-decoration: none; margin: 0 10px;">Contact</a>
+                    </p>
+                </div>
+            </div>
+        </footer>
+
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+        {% block extra_js %}{% endblock %}
+    </body>
+</html>

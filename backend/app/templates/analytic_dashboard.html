@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+
+{% block title %}Analytics - ParlGH{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analytics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 30px;
+        margin-bottom: 40px;
+    }
+
+    .analytics-card {
+        background: var(--ghana-white);
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        border-top: 5px solid var(--ghana-red);
+        transition: all 0.3s ease;
+    }
+
+    .analytics-card:hover {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        transform: translateY(-3px);
+    }
+
+    .analytics-card h2 {
+        color: var(--ghana-red);
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--ghana-yellow);
+    }
+
+    .analytics-card.accent1 {
+        border-top-color: var(--ghana-green);
+    }
+
+    .analytics-card.accent1 h2 {
+        color: var(--ghana-green);
+    }
+
+    .analytics-card.accent2 {
+        border-top-color: var(--ghana-yellow);
+    }
+
+    .analytics-card.accent2 h2 {
+        color: #D4A000;
+    }
+
+    .no-data {
+        color: #999;
+        font-style: italic;
+        padding: 20px;
+        text-align: center;
+        background: #f5f5f5;
+        border-radius: 8px;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 400px;
+        margin-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .analytics-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .chart-container {
+            height: 300px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1><i class="fas fa-chart-bar"></i> Analytics Dashboard</h1>
+    <p>Parliamentary statistics and performance metrics</p>
+</div>
+
+<div class="analytics-grid">
+    <!-- MP of the Month -->
+    <div class="analytics-card">
+        <h2><i class="fas fa-crown"></i> MP Activity by Month</h2>
+        {% if monthly_stats %}
+        <div class="chart-container">
+            <canvas id="mpChart"></canvas>
+        </div>
+        {% else %}
+        <div class="no-data">No monthly activity data available.</div>
+        {% endif %}
+    </div>
+
+    <!-- Topics -->
+    <div class="analytics-card accent1">
+        <h2><i class="fas fa-tag"></i> Discussion Topics</h2>
+        {% if topic_counts %}
+        <div class="chart-container">
+            <canvas id="topicChart"></canvas>
+        </div>
+        {% else %}
+        <div class="no-data">No topic data available.</div>
+        {% endif %}
+    </div>
+
+    <!-- Sessions -->
+    <div class="analytics-card accent2">
+        <h2><i class="fas fa-calendar-alt"></i> Session Activity</h2>
+        {% if session_counts %}
+        <div class="chart-container">
+            <canvas id="sessionChart"></canvas>
+        </div>
+        {% else %}
+        <div class="no-data">No session data available.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Wait for DOM to be ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Chart.js default colors using Ghana colors
+        Chart.defaults.color = '#555';
+        Chart.defaults.borderColor = '#eee';
+        Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+        
+        // Parse JSON data from Django
+        let monthlyData = [];
+        let topicData = [];
+        let sessionData = [];
+        
+        try {
+            monthlyData = JSON.parse('{{ monthly_stats|safe }}');
+        } catch (e) {
+            console.error('Error parsing monthly stats:', e);
+        }
+        
+        try {
+            topicData = JSON.parse('{{ topic_counts|safe }}');
+        } catch (e) {
+            console.error('Error parsing topic data:', e);
+        }
+        
+        try {
+            sessionData = JSON.parse('{{ session_counts|safe }}');
+        } catch (e) {
+            console.error('Error parsing session data:', e);
+        }
+        
+        console.log('Monthly Stats:', monthlyData);
+        console.log('Topic Data:', topicData);
+        console.log('Session Data:', sessionData);
+        
+        // === MP Chart ===
+        if (monthlyData && Array.isArray(monthlyData) && monthlyData.length > 0) {
+            const mpChartEl = document.getElementById('mpChart');
+            if (mpChartEl) { 
+                try {
+                    const mpLabels = monthlyData.slice(0, 10).map(d => {
+                        const speaker = d['speaker__name'] || 'Unknown';
+                        const month = d['month'] ? d['month'].substring(0, 7) : 'N/A'; // Format: YYYY-MM
+                        return speaker + ' (' + month + ')';
+                    });
+                    const mpValues = monthlyData.slice(0, 10).map(d => parseInt(d['total_words']) || 0);
+                     
+                    new Chart(mpChartEl, {
+                        type: 'bar',
+                        data: {
+                            labels: mpLabels,
+                            datasets: [{
+                                label: 'Words Spoken',
+                                data: mpValues,
+                                backgroundColor: '#CE1126',
+                                borderColor: '#a30d20',
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value.toLocaleString();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    console.log('MP Chart created successfully');
+                } catch (e) {
+                    console.error('Error creating MP chart:', e);
+                }
+            }
+        }
+
+        // === Topic Chart ===
+        if (topicData && Array.isArray(topicData) && topicData.length > 0) {
+            const topicChartEl = document.getElementById('topicChart');
+            if (topicChartEl) {
+                try {
+                    const topicLabels = topicData.map(d => d.name || 'Unknown');
+                    const topicValues = topicData.map(d => parseInt(d.total_words) || 0);
+                    
+                    new Chart(topicChartEl, {
+                        type: 'doughnut',
+                        data: {
+                            labels: topicLabels,
+                            datasets: [{
+                                label: 'Words Spoken',
+                                data: topicValues,
+                                backgroundColor: [
+                                    '#CE1126',
+                                    '#007857',
+                                    '#FCD116',
+                                    '#a30d20',
+                                    '#005640',
+                                    '#D4A000'
+                                ],
+                                borderColor: '#ffffff',
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }
+                    });
+                    console.log('Topic Chart created successfully');
+                } catch (e) {
+                    console.error('Error creating Topic chart:', e);
+                }
+            }
+        }
+
+        // === Session Chart ===
+        if (sessionData && Array.isArray(sessionData) && sessionData.length > 0) {
+            const sessionChartEl = document.getElementById('sessionChart');
+            if (sessionChartEl) {
+                try {
+                    const sessionLabels = sessionData.slice(0, 15).map(d => d.title || 'Session');
+                    const sessionValues = sessionData.slice(0, 15).map(d => parseInt(d.segment_count) || 0);
+                    
+                    new Chart(sessionChartEl, {
+                        type: 'line',
+                        data: {
+                            labels: sessionLabels,
+                            datasets: [{
+                                label: 'Word Count',
+                                data: sessionValues,
+                                fill: true,
+                                backgroundColor: 'rgba(206, 17, 38, 0.1)',
+                                borderColor: '#CE1126',
+                                borderWidth: 3,
+                                tension: 0.4,
+                                pointBackgroundColor: '#CE1126',
+                                pointBorderColor: '#ffffff',
+                                pointBorderWidth: 2,
+                                pointRadius: 5
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value.toLocaleString();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    console.log('Session Chart created successfully');
+                } catch (e) {
+                    console.error('Error creating Session chart:', e);
+                }
+            }
+        }
+    });
+</script>
+
+{% endblock %}

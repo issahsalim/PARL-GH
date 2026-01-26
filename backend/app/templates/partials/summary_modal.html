@@ -1,0 +1,55 @@
+<div class="modal" tabindex="-1" id="summaryModal">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Summary</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% if summary %}
+                <p><strong>Summary:</strong></p>
+                <div class="mb-3">{{ summary.summary_text|linebreaks }}</div>
+
+                {% if summary.speakers_mentioned %}
+                <p><strong>Speakers mentioned:</strong></p>
+                <ul>
+                    {% for s in summary.speakers_mentioned %}
+                    <li>{{ s }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                {% if summary.motions %}
+                <p><strong>Motions:</strong></p>
+                <ul>
+                    {% for m in summary.motions %}
+                    <li>{{ m }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                {% if summary.outcomes %}
+                <p><strong>Outcomes:</strong></p>
+                <ul>
+                    {% for o in summary.outcomes %}
+                    <li>{{ o }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                <hr />
+                <p class="small text-muted">Original words: {{summary.original_word_count }} — Summary words: {{summary.summary_word_count }} — Reduced: {{summary.reduction_percentage }}%</p>
+                {% else %}
+                <p>No summary available.</p>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                    data-bs-dismiss="modal">Close</button>
+                <a href="{% url 'view_summary' summary.id %}"
+                    class="btn btn-primary">Open Summary Page</a>
+            </div>
+        </div>
+    </div>
+</div>

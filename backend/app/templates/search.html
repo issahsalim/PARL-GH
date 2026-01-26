@@ -1,0 +1,471 @@
+{% extends 'base.html' %}
+
+{% block title %}Search - ParlGH{% endblock %}
+
+{% block extra_css %}
+<style>
+        /* Ghana Colors */
+        :root {
+            --ghana-red: #CE1126;
+            --ghana-yellow: #FCD116;
+            --ghana-green: #007857;
+            --ghana-black: #000000;
+            --ghana-white: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+
+        /* Header Section */
+        .header-banner {
+            background: linear-gradient(135deg, var(--ghana-red) 0%, var(--ghana-green) 100%);
+            color: var(--ghana-white);
+            padding: 40px 20px;
+            border-radius: 12px;
+            margin-bottom: 40px;
+            box-shadow: 0 8px 32px rgba(206, 17, 38, 0.2);
+            text-align: center;
+        }
+
+        .header-banner h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-banner p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            margin: 0;
+        }
+
+        /* Search Form Section */
+        .search-container {
+            background: var(--ghana-white);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+        }
+
+        .search-form {
+            display: grid;
+            gap: 15px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: var(--ghana-black);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background-color: #f9f9f9;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--ghana-red);
+            background-color: var(--ghana-white);
+            box-shadow: 0 0 0 3px rgba(206, 17, 38, 0.1);
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, var(--ghana-red) 0%, #a30d20 100%);
+            color: var(--ghana-white);
+            border: none;
+            padding: 13px 40px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            align-self: flex-end;
+            box-shadow: 0 4px 12px rgba(206, 17, 38, 0.3);
+        }
+
+        .search-btn:hover {
+            background: linear-gradient(135deg, #a30d20 0%, var(--ghana-red) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(206, 17, 38, 0.4);
+        }
+
+        .search-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Results Section */
+        .results-container {
+            margin-top: 40px;
+        }
+
+        .results-header {
+            color: var(--ghana-black);
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 4px solid var(--ghana-red);
+            display: inline-block;
+        }
+
+        .result-block {
+            background: var(--ghana-white);
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            border-left: 5px solid var(--ghana-green);
+            transition: all 0.3s ease;
+        }
+
+        .result-block:hover {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+            transform: translateY(-3px);
+        }
+
+        .result-block h3 {
+            color: var(--ghana-red);
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-block h3 i {
+            color: var(--ghana-yellow);
+            font-size: 1.3rem;
+        }
+
+        .result-item {
+            padding: 15px 0;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.2s ease;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-item:hover {
+            background-color: #f9f9f9;
+            padding-left: 10px;
+        }
+
+        .result-speaker {
+            color: var(--ghana-red);
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .result-session {
+            color: var(--ghana-green);
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .result-text {
+            color: #555;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .result-text a {
+            color: var(--ghana-red);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .result-text a:hover {
+            color: var(--ghana-green);
+            text-decoration: underline;
+        }
+
+        mark {
+            background-color: var(--ghana-yellow);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+
+        .empty-message {
+            color: #999;
+            font-style: italic;
+            padding: 20px;
+            text-align: center;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .no-results i {
+            font-size: 3.5rem;
+            color: var(--ghana-yellow);
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .no-results h2 {
+            color: var(--ghana-black);
+            margin-bottom: 10px;
+        }
+
+        .no-results p {
+            color: #666;
+            font-size: 1.05rem;
+        }
+
+        /* Ghana Flag Accent */
+        .ghana-flag-accent {
+            display: flex;
+            height: 6px;
+            gap: 0;
+            margin-bottom: 20px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .ghana-flag-accent > div {
+            flex: 1;
+        }
+
+        @media (max-width: 768px) {
+            .header-banner h1 {
+                font-size: 1.8rem;
+            }
+
+            .header-banner p {
+                font-size: 0.95rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .search-btn {
+                align-self: stretch;
+                width: 100%;
+            }
+
+            .results-header {
+                font-size: 1.4rem;
+            }
+
+            .result-block h3 {
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .search-container {
+                padding: 20px;
+            }
+
+            .header-banner {
+                padding: 25px 15px;
+            }
+
+            .header-banner h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+
+    <div class="header-banner">
+        <h1><i class="fas fa-microphone-alt"></i> ParlGH Search Portal</h1>
+        <p>Explore Ghana's Parliamentary Debates and Discussions</p>
+    </div>
+
+    <div class="search-container">
+                <div class="ghana-flag-accent">
+                    <div style="background-color: var(--ghana-red);"></div>
+                    <div style="background-color: var(--ghana-yellow);"></div>
+                    <div style="background-color: var(--ghana-green);"></div>
+                </div>
+
+                <form method="GET" class="search-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="search-input"><i
+                                    class="fas fa-search"></i> Search
+                                Keywords</label>
+                            <input type="text" id="search-input" name="q"
+                                placeholder="Enter your search query..."
+                                value="{{ query }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="speaker-select"><i
+                                    class="fas fa-user"></i> Speaker</label>
+                            <select id="speaker-select" name="speaker">
+                                <option value>All Speakers</option>
+                                {% for s in speakers %}
+                                <option value="{{ s.id }}">{{ s.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="topic-select"><i class="fas fa-tag"></i>
+                                Topic</label>
+                            <select id="topic-select" name="topic">
+                                <option value>All Topics</option>
+                                {% for t in topics %}
+                                <option value="{{ t.id }}">{{ t.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="session-select"><i
+                                    class="fas fa-calendar-alt"></i>
+                                Session</label>
+                            <select id="session-select" name="session">
+                                <option value>All Sessions</option>
+                                {% for s in sessions %}
+                                <option value="{{ s.id }}">{{ s.title}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="date-input"><i class="fas fa-clock"></i>
+                                Date</label>
+                            <input type="date" id="date-input" name="date">
+                        </div>
+
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="search-btn"><i
+                                    class="fas fa-search"></i> Search</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            {% if query %}
+            <div class="results-container">
+                <h2 class="results-header"><i class="fas fa-results"></i>
+                    Results for "{{ query }}"</h2>
+
+                <div class="result-block">
+                    <h3><i class="fas fa-users"></i> Speakers</h3>
+                    {% for sp in speaker_results %}
+                    <div class="result-item">
+                        <div class="result-speaker">{{ sp.name }}</div>
+                        <div class="result-session">{{ sp.role }}</div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-message">
+                        <i class="fas fa-inbox"></i> No speakers found.
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="result-block">
+                    <h3><i class="fas fa-bookmark"></i> Topics</h3>
+                    {% for t in topic_results %}
+                    <div class="result-item">
+                        <div class="result-speaker">{{ t.name }}</div>
+                        <div class="result-session">Session: {{ t.session.title}}</div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-message">
+                        <i class="fas fa-inbox"></i> No topics found.
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="result-block">
+                    <h3><i class="fas fa-quote-left"></i> Debate Segments</h3>
+                    {% for seg in segments %}
+                    <div class="result-item">
+                        <div class="result-speaker">{{ seg.speaker.name }}</div>
+                        <div class="result-session">{{ seg.session.title}}</div>
+                        <div class="result-text">
+                            <a href="{% url 'segment_detail' seg.id %}" class="text-primary">
+                                {{ seg.text|truncatewords:25 }}
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-message">
+                        <i class="fas fa-inbox"></i> No matching debate
+                        segments.
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="result-block">
+                    <h3><i class="fas fa-file-alt"></i> More Debate
+                        Segments</h3>
+                    {% for seg in results %}
+                    <div class="result-item">
+                        <div class="result-speaker">{{ seg.speaker.name }}</div>
+                        <div class="result-session">{{ seg.session.title}}</div>
+                        <div class="result-text">
+                            {{ seg.text|safe|truncatewords:40 }}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-message">
+                        <i class="fas fa-inbox"></i> No debate text found.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="no-results">
+                <i class="fas fa-search"></i>
+                <h2>Start Your Search</h2>
+                <p>Use the search form above to explore Ghana's parliamentary debates and discussions</p>
+            </div>
+            {% endif %}
+    </div>
+
+{% endblock %}

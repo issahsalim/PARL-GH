@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block title %}Sessions - ParlGH{% endblock %}
+
+{% block extra_css %}
+<style>
+    .session-card {
+        background: var(--ghana-white);
+        padding: 25px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        border-left: 5px solid var(--ghana-green);
+        transition: all 0.3s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .session-card:hover {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        transform: translateY(-3px);
+    }
+
+    .session-info h3 {
+        color: var(--ghana-red);
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .session-date {
+        color: var(--ghana-green);
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .session-link {
+        background: linear-gradient(135deg, var(--ghana-red) 0%, #a30d20 100%);
+        color: var(--ghana-white);
+        padding: 10px 25px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+    }
+
+    .session-link:hover {
+        background: linear-gradient(135deg, #a30d20 0%, var(--ghana-red) 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(206, 17, 38, 0.3);
+    }
+
+    .no-sessions {
+        text-align: center;
+        padding: 60px 20px;
+        background: var(--ghana-white);
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .no-sessions i {
+        font-size: 3rem;
+        color: var(--ghana-yellow);
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+
+    .no-sessions h2 {
+        color: var(--ghana-black);
+        margin-bottom: 10px;
+    }
+
+    .sessions-count {
+        background: linear-gradient(135deg, var(--ghana-red) 0%, var(--ghana-green) 100%);
+        color: var(--ghana-white);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        text-align: center;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .session-card {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .session-link {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1><i class="fas fa-calendar-alt"></i> Parliament Sessions</h1>
+    <p>Browse all parliamentary sessions and their debates</p>
+</div>
+
+{% if sessions %}
+<div class="sessions-count">
+    <i class="fas fa-info-circle"></i> Total Sessions: <strong>{{paginator.count }}</strong>
+</div>
+
+{% for session in sessions %}
+<div class="session-card">
+    <div class="session-info">
+        <h3>{{ session.title }}</h3>
+        <div class="session-date">
+            <i class="fas fa-calendar"></i> {{session.sitting_date|date:"F j, Y"}}
+        </div>
+    </div>
+    <a href="{% url 'session_detail' session.id %}" class="session-link">
+        <i class="fas fa-arrow-right"></i> View Details
+    </a>
+</div>
+{% endfor %}
+<!-- Pagination controls -->
+{% if sessions.has_other_pages %}
+<nav aria-label="Session pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if sessions.has_previous %}
+        <li class="page-item">
+            <a class="page-link"
+                href="?page={{ sessions.previous_page_number }}"
+                aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span
+                class="page-link">&laquo;</span></li>
+        {% endif %}
+
+        {% for num in sessions.paginator.page_range %}
+        {% if sessions.number == num %}
+        <li class="page-item active" aria-current="page"><span
+                class="page-link">{{ num }}</span></li>
+        {% elif num > sessions.number|add:'-5' and num < sessions.number|add:'5'%}
+        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num}}</a></li>
+        {% endif %}
+        {% endfor %}
+
+        {% if sessions.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ sessions.next_page_number }}"
+                aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span
+                class="page-link">&raquo;</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% else %}
+<div class="no-sessions">
+    <i class="fas fa-calendar-times"></i>
+    <h2>No Sessions Found</h2>
+    <p>There are currently no parliamentary sessions available.</p>
+</div>
+{% endif %}
+
+{% endblock %}

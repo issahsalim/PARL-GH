@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Summarize Content - ParlGH{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-gradient"
+                    style="background: linear-gradient(90deg, var(--ghana-red) 0%, var(--ghana-green) 100%);">
+                    <h3 class="text-white mb-0">
+                        <i class="fas fa-magic"></i> AI Summarizer
+                    </h3>
+                    <p class="text-light mb-0 small">Summarize parliamentary
+                        debates and transcripts using AI</p>
+                </div>
+
+                <div class="card-body p-4">
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div
+                        class="alert alert-{{ message.tags }} alert-dismissible fade show"
+                        role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close"
+                            data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <form method="post" class="needs-validation">
+                        {% csrf_token %}
+
+                        <!-- Title Field -->
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}"
+                                class="form-label">
+                                <i class="fas fa-heading"></i> Title (Optional)
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.help_text %}
+                            <small class="form-text text-muted d-block mt-1">{{form.title.help_text|safe }}</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- Text Content Field -->
+                        <div class="mb-3">
+                            <label for="{{ form.text.id_for_label }}"
+                                class="form-label">
+                                <i class="fas fa-file-alt"></i> Content to
+                                Summarize
+                            </label>
+                            {{ form.text }}
+                            {% if form.text.help_text %}
+                            <small class="form-text text-muted d-block mt-1">{{form.text.help_text|safe }}</small>
+                            {% endif %}
+                            {% if form.text.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.text.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Info Box -->
+                        <div class="alert alert-info" role="alert">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>How it works:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Paste your debate transcript, motion, or any
+                                    parliamentary content</li>
+                                <li>Our AI will generate a concise summary</li>
+                                <li>Extract key information: speakers, motions,
+                                    and outcomes</li>
+                                <li>View reduction percentage and word
+                                    count</li>
+                            </ul>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-lg"
+                                style="background: var(--ghana-red); color: white;">
+                                <i class="fas fa-brain"></i> Generate Summary
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Divider -->
+                    <hr class="my-4">
+
+                    <!-- Quick Links -->
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <a href="{% url 'session_list' %}"
+                                class="btn btn-outline-secondary btn-sm w-100">
+                                <i class="fas fa-list"></i> Browse Sessions
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{% url 'summaries_list' %}"
+                                class="btn btn-outline-success btn-sm w-100">
+                                <i class="fas fa-history"></i> View Previous
+                                Summaries
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature Highlights -->
+            <div class="row mt-5">
+                <div class="col-md-4">
+                    <div class="card text-center border-0 shadow-sm">
+                        <div class="card-body">
+                            <i class="fas fa-robot fa-2x mb-3"
+                                style="color: var(--ghana-red);"></i>
+                            <h5 class="card-title">AI-Powered</h5>
+                            <p class="card-text small">Uses advanced BART model
+                                for accurate summaries</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center border-0 shadow-sm">
+                        <div class="card-body">
+                            <i class="fas fa-chart-pie fa-2x mb-3"
+                                style="color: var(--ghana-green);"></i>
+                            <h5 class="card-title">Structured Data</h5>
+                            <p class="card-text small">Extracts speakers,
+                                motions, and outcomes</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center border-0 shadow-sm">
+                        <div class="card-body">
+                            <i class="fas fa-lock fa-2x mb-3"
+                                style="color: var(--ghana-yellow);"></i>
+                            <h5 class="card-title">Accessible to All</h5>
+                            <p class="card-text small">No registration required
+                                - everyone can summarize</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --ghana-red: #CE1126;
+        --ghana-yellow: #FCD116;
+        --ghana-green: #007857;
+    }
+
+    textarea.form-control {
+        min-height: 250px;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+    }
+
+    .bg-gradient {
+        background-attachment: fixed;
+    }
+
+    .card {
+        border-radius: 10px;
+        transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
