@@ -31,10 +31,8 @@
                             </h2>
                         </div>
                         <div class="col-auto">
-                            <span class="badge bg-light text-dark">{{
-                                summary.get_content_type_display }}</span>
-                            <span class="badge bg-success">{{
-                                summary.reduction_percentage }}% Reduced</span>
+                            <span class="badge bg-light text-dark">{{ summary.get_content_type_display }}</span>
+                            <span class="badge bg-success">{{ summary.reduction_percentage }}% Reduced</span>
                         </div>
                     </div>
                 </div>
@@ -44,42 +42,30 @@
                     <div class="row mb-4">
                         <div class="col-md-3">
                             <div class="text-center p-3 bg-light rounded">
-                                <h6 class="text-muted mb-2"><i
-                                        class="fas fa-file"></i> Original</h6>
-                                <h3 class="text-dark">{{
-                                    summary.original_word_count }}</h3>
+                                <h6 class="text-muted mb-2"><i class="fas fa-file"></i> Original</h6>
+                                <h3 class="text-dark">{{ summary.original_word_count }}</h3>
                                 <small>words</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-3 bg-light rounded">
-                                <h6 class="text-muted mb-2"><i
-                                        class="fas fa-compress"></i>
-                                    Summary</h6>
-                                <h3 class="text-dark">{{
-                                    summary.summary_word_count }}</h3>
+                                <h6 class="text-muted mb-2"><i class="fas fa-compress"></i> Summary</h6>
+                                <h3 class="text-dark">{{ summary.summary_word_count }}</h3>
                                 <small>words</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-3 bg-light rounded">
-                                <h6 class="text-muted mb-2"><i
-                                        class="fas fa-percent"></i>
-                                    Reduction</h6>
-                                <h3 class="text-success">{{
-                                    summary.reduction_percentage }}%</h3>
+                                <h6 class="text-muted mb-2"><i class="fas fa-percent"></i> Reduction</h6>
+                                <h3 class="text-success">{{ summary.reduction_percentage }}%</h3>
                                 <small>compressed</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-3 bg-light rounded">
-                                <h6 class="text-muted mb-2"><i
-                                        class="fas fa-clock"></i> Generated</h6>
-                                <h3 class="text-primary"
-                                    style="font-size: 1.2rem;">{{
-                                    summary.created_at|date:"M d, Y" }}</h3>
-                                <small>{{ summary.created_at|time:"H:i"
-                                    }}</small>
+                                <h6 class="text-muted mb-2"><i class="fas fa-clock"></i> Generated</h6>
+                                <h3 class="text-primary" style="font-size: 1.2rem;">{{ summary.created_at|date:"M d, Y" }}</h3>
+                                <small>{{ summary.created_at|time:"H:i" }}</small>
                             </div>
                         </div>
                     </div>
@@ -91,95 +77,74 @@
                                 Summary</h5>
                         </div>
                         <div class="card-body">
-                            <p class="lead"
-                                style="line-height: 1.8; font-size: 1.05rem;">{{
-                                summary.summary_text }}</p>
+                            <p class="lead" style="line-height: 1.8; font-size: 1.05rem;">{{ summary.summary_text }}</p>
                         </div>
                     </div>
 
                     <!-- Structured Information Section -->
                     <div class="row mb-4">
-                        {% if summary.speakers_mentioned %}
                         <div class="col-md-6 mb-3">
                             <div class="card border-0 shadow-sm">
                                 <div class="card-header bg-info text-white">
-                                    <h6 class="mb-0"><i
-                                            class="fas fa-microphone"></i>
-                                        Speakers Mentioned</h6>
+                                    <h6 class="mb-0"><i class="fas fa-microphone"></i> Speakers Mentioned</h6>
                                 </div>
                                 <div class="card-body">
                                     {% if summary.speakers_mentioned %}
                                     <ul class="list-unstyled">
-                                        {% for speaker in
-                                        summary.speakers_mentioned %}
+                                        {% for speaker in summary.speakers_mentioned %}
                                         <li class="mb-2">
-                                            <span class="badge bg-info">{{
-                                                speaker }}</span>
+                                            <span class="badge bg-info">{{ speaker }}</span>
                                         </li>
                                         {% endfor %}
                                     </ul>
                                     {% else %}
-                                    <p class="text-muted small mb-0">No speakers
-                                        extracted</p>
+                                    <p class="text-muted small mb-0">No speakers extracted</p>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
-                        {% endif %}
 
-                        {% if summary.motions %}
                         <div class="col-md-6 mb-3">
                             <div class="card border-0 shadow-sm">
                                 <div class="card-header bg-warning text-dark">
-                                    <h6 class="mb-0"><i
-                                            class="fas fa-scroll"></i>
-                                        Motions</h6>
+                                    <h6 class="mb-0"><i class="fas fa-scroll"></i> Motions</h6>
                                 </div>
                                 <div class="card-body">
                                     {% if summary.motions %}
                                     <ul class="list-unstyled">
                                         {% for motion in summary.motions %}
                                         <li class="mb-2">
-                                            <small class="text-wrap">{{ motion
-                                                }}</small>
+                                            <small class="text-wrap">{{ motion }}</small>
                                         </li>
                                         {% endfor %}
                                     </ul>
                                     {% else %}
-                                    <p class="text-muted small mb-0">No motions
-                                        extracted</p>
+                                    <p class="text-muted small mb-0">No motions extracted</p>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
-                        {% endif %}
 
-                        {% if summary.outcomes %}
                         <div class="col-md-6 mb-3">
                             <div class="card border-0 shadow-sm">
                                 <div class="card-header bg-success text-white">
-                                    <h6 class="mb-0"><i
-                                            class="fas fa-check-circle"></i>
-                                        Outcomes & Decisions</h6>
+                                    <h6 class="mb-0"><i class="fas fa-check-circle"></i> Outcomes & Decisions</h6>
                                 </div>
                                 <div class="card-body">
                                     {% if summary.outcomes %}
                                     <ul class="list-unstyled">
                                         {% for outcome in summary.outcomes %}
                                         <li class="mb-2">
-                                            <small class="text-wrap"><strong>{{
-                                                    outcome }}</strong></small>
+                                            <small class="text-wrap"><strong>{{ outcome }}</strong></small>
                                         </li>
                                         {% endfor %}
                                     </ul>
                                     {% else %}
-                                    <p class="text-muted small mb-0">No outcomes
-                                        extracted</p>
+                                    <p class="text-muted small mb-0">No outcomes extracted</p>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
-                        {% endif %}
                     </div>
 
                     <!-- Context Information -->

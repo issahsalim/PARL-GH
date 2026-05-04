@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import HansardFile, Session, Topic, Speaker, DebateSegment, Summary
+from .models import HansardFile, Session, Topic, Speaker, DebateSegment, Summary, ParliamentaryLeadership
 from django.urls import path, reverse
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -11,6 +11,10 @@ from app.utils.pipeline import run_hansard_pipeline
 from django.http import HttpResponseRedirect
 from django.urls import path
 
+@admin.register(ParliamentaryLeadership)
+class ParliamentaryLeadershipAdmin(admin.ModelAdmin):
+    list_display = ('role', 'name', 'order')
+    list_editable = ('order',)
 
 
 # @admin.register(HansardFile)
@@ -73,6 +77,7 @@ class HansardAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         custom = [
             path("upload/", self.admin_site.admin_view(self.upload_pdf), name="hansard_upload"),
+            path("fetch-web/", self.admin_site.admin_view(self.fetch_web_hansards), name="hansard_fetch_web"),
         ] 
         return custom + urls
     
@@ -84,6 +89,7 @@ class HansardAdmin(admin.ModelAdmin):
         if not queryset.exists():
             self.message_user(request, "No files selected.", level=messages.WARNING)
             return
+        
         
         from app.utils.pipeline import process_pdf
         processed = 0
@@ -165,6 +171,29 @@ class HansardAdmin(admin.ModelAdmin):
             return redirect(f"/admin/{app_label}/{model_name}/")
 
         return render(request, "admin/upload_form.html", {"form": form})
+
+    def fetch_web_hansards(self, request):
+        """Action to trigger the full pipeline: Download + Process"""
+        from app.utils.pipeline import run_hansard_pipeline
+        
+        # Run the full pipeline (Downloader + Processor)
+        result = run_hansard_pipeline()
+        
+        if result.get('success', False):
+            downloaded = result.get('downloaded', 0)
+            processed = result.get('processed', 0)
+            
+            if downloaded > 0 or processed > 0:
+                messages.success(
+                    request, 
+                    f"✅ Pipeline completed! Downloaded {downloaded} and processed {processed} file(s)."
+                )
+            else:
+                messages.info(request, "ℹ️ No new Hansard files found to download or process.")
+        else:
+            messages.error(request, f"❌ Pipeline failed: {result.get('message', 'Unknown error')}")
+            
+        return HttpResponseRedirect("../")
 
 # ============ SUMMARY ADMIN ============
 

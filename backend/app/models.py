@@ -107,3 +107,18 @@ class Summary(models.Model):
     def __str__(self):
         return f"Summary of {self.get_content_type_display()} ({self.created_at.strftime('%Y-%m-%d')})"
     
+class ParliamentaryLeadership(models.Model):
+    role = models.CharField(max_length=100) # e.g. "President of Ghana"
+    name = models.CharField(max_length=200)
+    title = models.CharField(max_length=100) # e.g. "Executive Leadership"
+    description = models.TextField()
+    image = models.ImageField(upload_to='leadership/')
+    order = models.IntegerField(default=0)
+
+    class Meta:
+        verbose_name_plural = "Parliamentary Leadership"
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.role}: {self.name}"
+    

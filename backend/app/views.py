@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Session, DebateSegment, Speaker, Topic, Summary
+from .models import Session, DebateSegment, Speaker, Topic, Summary, ParliamentaryLeadership
 # app/views.py (add these imports at top)
 from django.db.models import Sum, Count
 from django.db.models.functions import TruncMonth
@@ -28,11 +28,14 @@ def home(request):
     total_speakers = Speaker.objects.count()
     total_topics = Topic.objects.count()
     
+    leadership = ParliamentaryLeadership.objects.all().order_by('order')
+    
     context = {
         'total_segments': total_segments,
         'total_sessions': total_sessions,
         'total_speakers': total_speakers,
         'total_topics': total_topics,
+        'leadership': leadership,
     }
     return render(request, 'index.html', context)
 
@@ -71,9 +74,10 @@ def search(request):
     speaker_id = request.GET.get("speaker")
     topic_id = request.GET.get("topic")
     session_id = request.GET.get("session")
-    date = request.GET.get("date")
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
 
-    segments = DebateSegment.objects.all()
+    segments = DebateSegment.objects.all().select_related('speaker', 'session')
 
     # TEXT SEARCH
     if query:
@@ -89,8 +93,11 @@ def search(request):
     if session_id:
         segments = segments.filter(session_id=session_id)
 
-    if date:
-        segments = segments.filter(session__sitting_date=date)
+    if start_date:
+        segments = segments.filter(session__sitting_date__gte=start_date)
+    
+    if end_date:
+        segments = segments.filter(session__sitting_date__lte=end_date)
 
     # SUMMARY RESULTS (for left side)
     session_results = Session.objects.filter(title__icontains=query) if query else []
@@ -103,6 +110,8 @@ def search(request):
         "session_results": session_results,
         "topic_results": topic_results,
         "speaker_results": speaker_results,
+        "start_date": start_date,
+        "end_date": end_date,
 
         # Filter dropdown values
         "speakers": Speaker.objects.all(),

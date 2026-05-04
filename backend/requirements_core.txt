@@ -1,0 +1,9 @@
+Django
+psycopg2-binary
+pdfplumber
+requests
+beautifulsoup4
+django-apscheduler
+transformers
+torch
+sentencepiece

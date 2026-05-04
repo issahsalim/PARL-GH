@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
-
-{% block title %}Home - ParlGH Ghana Parliamentary Portal{% endblock %}
+{% load static %}
+{% block title %}Home - OpenParlGh Ghana Parliamentary Portal{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -50,6 +50,7 @@
             opacity: 0;
             transform: translateY(20px);
         }
+
         100% {
             opacity: 1;
             transform: translateY(0);
@@ -71,6 +72,7 @@
         0% {
             transform: rotate(0deg);
         }
+
         100% {
             transform: rotate(360deg);
         }
@@ -96,9 +98,11 @@
         0% {
             width: 0%;
         }
+
         50% {
             width: 80%;
         }
+
         100% {
             width: 100%;
         }
@@ -114,9 +118,12 @@
     }
 
     @keyframes fadeInOut {
-        0%, 100% {
+
+        0%,
+        100% {
             opacity: 0.6;
         }
+
         50% {
             opacity: 1;
         }
@@ -145,7 +152,7 @@
 
         /* .preloader-icon {
             font-size: 1.5rem;
-        } */ 
+        } */
 
         .preloader-subtitle {
             font-size: 0.85rem;
@@ -310,6 +317,18 @@
         justify-content: center;
         font-size: 4rem;
         color: var(--ghana-yellow);
+        overflow: hidden;
+    }
+
+    .leader-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+
+    .leader-card:hover .leader-image img {
+        transform: scale(1.1);
     }
 
     .leader-info {
@@ -464,6 +483,10 @@
             <i class="fas fa-building"></i>
         </div> -->
         <div class="preloader-text">
+            <span class="preloader-char">O</span>
+            <span class="preloader-char">p</span>
+            <span class="preloader-char">e</span>
+            <span class="preloader-char">n</span>
             <span class="preloader-char">P</span>
             <span class="preloader-char">a</span>
             <span class="preloader-char">r</span>
@@ -471,6 +494,7 @@
             <span class="preloader-char">G</span>
             <span class="preloader-char">H</span>
         </div>
+
         <div class="preloader-bar">
             <div class="preloader-bar-fill"></div>
         </div>
@@ -480,15 +504,14 @@
 
 <!-- Hero Section -->
 <div class="hero-section">
-    <h1>Welcome to ParlGH</h1>
+    <h1>Welcome to OpenParlGh</h1>
     <p>Your gateway to Ghana's parliamentary debates, proceedings, and
         legislative decisions</p>
     <div class="cta-buttons">
         <a href="{% url 'search' %}" class="cta-button">
             <i class="fas fa-search"></i> Start Searching
         </a>
-        <a href="{% url 'session_list' %}"
-            class="cta-button cta-button-secondary">
+        <a href="{% url 'session_list' %}" class="cta-button cta-button-secondary">
             <i class="fas fa-calendar-alt"></i> Browse Sessions
         </a>
     </div>
@@ -548,23 +571,19 @@
 <section class="stats-section">
     <div class="stats-grid">
         <div class="stat-item">
-            <h3><span class="counter"
-                    data-target="{{ total_segments }}">0</span></h3>
+            <h3><span class="counter" data-target="{{ total_segments }}">0</span></h3>
             <p>Debate Segments</p>
         </div>
         <div class="stat-item">
-            <h3><span class="counter"
-                    data-target="{{ total_sessions }}">0</span></h3>
+            <h3><span class="counter" data-target="{{ total_sessions }}">0</span></h3>
             <p>Parliamentary Sessions</p>
         </div>
         <div class="stat-item">
-            <h3><span class="counter"
-                    data-target="{{ total_speakers }}">0</span></h3>
+            <h3><span class="counter" data-target="{{ total_speakers }}">0</span></h3>
             <p>Speakers</p>
         </div>
         <div class="stat-item">
-            <h3><span class="counter"
-                    data-target="{{ total_topics }}">0</span></h3>
+            <h3><span class="counter" data-target="{{ total_topics }}">0</span></h3>
             <p>Discussion Topics</p>
         </div>
     </div>
@@ -574,19 +593,33 @@
 <section class="leadership-section">
     <h2 class="section-title">Ghana's Parliamentary Leadership</h2>
     <div class="leaders-grid">
+        {% for leader in leadership %}
         <div class="leader-card">
-            <div class="leader-image"> 
+            <div class="leader-image">
+                {% if leader.image %}
+                <img src="{{ leader.image.url }}" alt="{{ leader.role }}">
+                {% else %}
+                <i class="fas fa-user-tie"></i>
+                {% endif %}
+            </div>
+            <div class="leader-info">
+                <div class="leader-name">{{ leader.role }}</div>
+                <div class="leader-title">{{ leader.name }}</div>
+                <div class="leader-description">{{ leader.description }}</div>
+            </div>
+        </div>
+        {% empty %}
+        <!-- Fallback if no leadership data is in DB yet -->
+        <div class="leader-card">
+            <div class="leader-image">
                 <i class="fas fa-user-tie"></i>
             </div>
             <div class="leader-info">
                 <div class="leader-name">President of Ghana</div>
                 <div class="leader-title">Executive Leadership</div>
-                <div class="leader-description">Head of State and Government
-                    responsible for executing the laws passed by
-                    Parliament</div>
+                <div class="leader-description">Head of State and Government responsible for executing laws.</div>
             </div>
         </div>
-
         <div class="leader-card">
             <div class="leader-image">
                 <i class="fas fa-gavel"></i>
@@ -594,12 +627,9 @@
             <div class="leader-info">
                 <div class="leader-name">Speaker of Parliament</div>
                 <div class="leader-title">Legislative Leadership</div>
-                <div class="leader-description">Presides over parliamentary
-                    proceedings and ensures orderly conduct of debates and
-                    votes</div>
+                <div class="leader-description">Presides over parliamentary proceedings and ensures order.</div>
             </div>
         </div>
-
         <div class="leader-card">
             <div class="leader-image">
                 <i class="fas fa-landmark"></i>
@@ -607,11 +637,10 @@
             <div class="leader-info">
                 <div class="leader-name">Parliament of Ghana</div>
                 <div class="leader-title">Legislative Body</div>
-                <div class="leader-description">Unicameral parliament with 275
-                    members elected from various constituencies across
-                    Ghana</div>
+                <div class="leader-description">Unicarmel parliament with 275 members.</div>
             </div>
         </div>
+        {% endfor %}
     </div>
 </section>
 
@@ -633,8 +662,7 @@
     </p>
 
     <div class="info-highlight">
-        <h4 style="color: var(--ghana-red); margin-bottom: 10px;"><i
-                class="fas fa-info-circle"></i> Did You Know?</h4>
+        <h4 style="color: var(--ghana-red); margin-bottom: 10px;"><i class="fas fa-info-circle"></i> Did You Know?</h4>
         <p style="margin: 0;">
             The Parliament of Ghana is housed in a modern complex located in
             Osu, Accra, featuring state-of-the-art facilities for legislative
@@ -647,34 +675,34 @@
     // Counter animation function
     function animateCounters() {
         const counters = document.querySelectorAll('.counter');
-        
+
         counters.forEach(counter => {
             const target = parseInt(counter.getAttribute('data-target'));
             const duration = 2000; // 2 seconds
             const increment = target / (duration / 16); // 60fps
             let current = 0;
-            
+
             const updateCounter = () => {
                 current += increment;
                 if (current < target) {
                     counter.textContent = Math.floor(current);
                     requestAnimationFrame(updateCounter);
                 } else {
-                    counter.textContent = target; 
+                    counter.textContent = target;
                 }
             };
-            
+
             updateCounter();
         });
     }
-    
+
     // Start animation when page loads
     window.addEventListener('load', animateCounters);
 </script>
 
 <script>
     // Preloader functionality for home page only
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Animate characters on preloader
         const chars = document.querySelectorAll('.preloader-char');
         chars.forEach((char, index) => {
@@ -690,7 +718,7 @@
         // }, 3000);
 
         // Wait 3 seconds then hide preloader and start counter animation
-        setTimeout(function() {
+        setTimeout(function () {
             const preloader = document.getElementById('preloader');
             if (preloader) {
                 preloader.classList.add('hidden');
