@@ -5,6 +5,8 @@ import requests
 from bs4 import BeautifulSoup
 
 from app.models import HansardFile
+from app.utils.progress import PipelineProgress
+
 
 
 PAGE_URL = "https://www.parliament.gh/docs?type=HS&P=0"
@@ -58,9 +60,12 @@ def download_new_hansards(limit=10, delay=1):
 
         downloaded = 0
 
+        PipelineProgress.update("Checking for new Hansard files on Parliament website...")
+        
         for row in rows:
             if downloaded >= limit:
                 break
+
 
             onclick = row.get("onclick")
             if not onclick or "showPDF" not in onclick:
@@ -83,6 +88,7 @@ def download_new_hansards(limit=10, delay=1):
             local_path = os.path.join(DOWNLOAD_FOLDER, file_name)
 
             try:
+                PipelineProgress.update(f"Downloading: {file_name}", current=downloaded + 1, total=limit)
                 r = requests.get(pdf_url, timeout=60)
                 if r.content[:4] != b"%PDF":
                     continue
@@ -98,6 +104,7 @@ def download_new_hansards(limit=10, delay=1):
 
                 downloaded += 1
                 time.sleep(delay)
+
             except requests.exceptions.RequestException as e:
                 # Log individual file download errors but continue with others
                 print(f"Error downloading {file_name}: {str(e)}")

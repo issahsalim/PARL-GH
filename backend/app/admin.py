@@ -11,10 +11,24 @@ from app.utils.pipeline import run_hansard_pipeline
 from django.http import HttpResponseRedirect
 from django.urls import path
 
+from django import forms
+
+class LeadershipForm(forms.ModelForm):
+    ROLE_CHOICES = [
+        ('president', 'President of Ghana'),
+        ('speaker', 'Speaker of Parliament'),
+    ]
+    role = forms.ChoiceField(choices=ROLE_CHOICES)
+    
+    class Meta:
+        model = ParliamentaryLeadership
+        fields = '__all__'
+
 @admin.register(ParliamentaryLeadership)
 class ParliamentaryLeadershipAdmin(admin.ModelAdmin):
-    list_display = ('role', 'name', 'order')
-    list_editable = ('order',)
+    form = LeadershipForm
+    list_display = ('role',)
+
 
 
 # @admin.register(HansardFile)

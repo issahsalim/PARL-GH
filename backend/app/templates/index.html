@@ -593,26 +593,14 @@
 <section class="leadership-section">
     <h2 class="section-title">Ghana's Parliamentary Leadership</h2>
     <div class="leaders-grid">
-        {% for leader in leadership %}
+        <!-- Card 1: President -->
         <div class="leader-card">
             <div class="leader-image">
-                {% if leader.image %}
-                <img src="{{ leader.image.url }}" alt="{{ leader.role }}">
+                {% if leadership_map.president %}
+                <img src="{{ leadership_map.president }}" alt="President of Ghana">
                 {% else %}
                 <i class="fas fa-user-tie"></i>
                 {% endif %}
-            </div>
-            <div class="leader-info">
-                <div class="leader-name">{{ leader.role }}</div>
-                <div class="leader-title">{{ leader.name }}</div>
-                <div class="leader-description">{{ leader.description }}</div>
-            </div>
-        </div>
-        {% empty %}
-        <!-- Fallback if no leadership data is in DB yet -->
-        <div class="leader-card">
-            <div class="leader-image">
-                <i class="fas fa-user-tie"></i>
             </div>
             <div class="leader-info">
                 <div class="leader-name">President of Ghana</div>
@@ -620,9 +608,15 @@
                 <div class="leader-description">Head of State and Government responsible for executing laws.</div>
             </div>
         </div>
+
+        <!-- Card 2: Speaker -->
         <div class="leader-card">
             <div class="leader-image">
+                {% if leadership_map.speaker %}
+                <img src="{{ leadership_map.speaker }}" alt="Speaker of Parliament">
+                {% else %}
                 <i class="fas fa-gavel"></i>
+                {% endif %}
             </div>
             <div class="leader-info">
                 <div class="leader-name">Speaker of Parliament</div>
@@ -630,6 +624,8 @@
                 <div class="leader-description">Presides over parliamentary proceedings and ensures order.</div>
             </div>
         </div>
+
+        <!-- Card 3: Parliament -->
         <div class="leader-card">
             <div class="leader-image">
                 <i class="fas fa-landmark"></i>
@@ -637,11 +633,11 @@
             <div class="leader-info">
                 <div class="leader-name">Parliament of Ghana</div>
                 <div class="leader-title">Legislative Body</div>
-                <div class="leader-description">Unicarmel parliament with 275 members.</div>
+                <div class="leader-description">Ghana's unicameral parliament with 275 members.</div>
             </div>
         </div>
-        {% endfor %}
     </div>
+
 </section>
 
 <!-- Parliament Information Section -->

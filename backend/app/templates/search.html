@@ -2,7 +2,10 @@
 
 {% block title %}Search - ParlGH{% endblock %}
 
+{% load search_extras %}
+
 {% block extra_css %}
+
 <style>
         /* Ghana Colors */
         :root {
@@ -315,163 +318,168 @@
 {% block content %}
 
     <div class="header-banner">
-        <h1><i class="fas fa-microphone-alt"></i> ParlGH Search Portal</h1>
-        <p>Explore Ghana's Parliamentary Debates and Discussions</p>
+        <h1><i class="fas fa-search"></i> Advanced Search</h1>
+        <p>Search within full text, speaker names, parties, and topics of Hansard proceedings.</p>
     </div>
 
     <div class="search-container">
-                <div class="ghana-flag-accent">
-                    <div style="background-color: var(--ghana-red);"></div>
-                    <div style="background-color: var(--ghana-yellow);"></div>
-                    <div style="background-color: var(--ghana-green);"></div>
+        <div class="ghana-flag-accent">
+            <div style="background-color: var(--ghana-red);"></div>
+            <div style="background-color: var(--ghana-yellow);"></div>
+            <div style="background-color: var(--ghana-green);"></div>
+        </div>
+
+        <form method="GET" class="search-form">
+            <!-- Main Search Row -->
+            <div class="form-row" style="grid-template-columns: 1fr auto;">
+                <div class="form-group">
+                    <input type="text" id="search-input" name="q" placeholder="Search keywords, speakers, or topics..." value="{{ query }}">
                 </div>
-
-                <form method="GET" class="search-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="search-input"><i
-                                    class="fas fa-search"></i> Search
-                                Keywords</label>
-                            <input type="text" id="search-input" name="q"
-                                placeholder="Enter your search query..."
-                                value="{{ query }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="speaker-select"><i
-                                    class="fas fa-user"></i> Speaker</label>
-                            <select id="speaker-select" name="speaker">
-                                <option value>All Speakers</option>
-                                {% for s in speakers %}
-                                <option value="{{ s.id }}">{{ s.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="topic-select"><i class="fas fa-tag"></i>
-                                Topic</label>
-                            <select id="topic-select" name="topic">
-                                <option value>All Topics</option>
-                                {% for t in topics %}
-                                <option value="{{ t.id }}">{{ t.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="session-select"><i
-                                    class="fas fa-calendar-alt"></i>
-                                Session</label>
-                            <select id="session-select" name="session">
-                                <option value>All Sessions</option>
-                                {% for s in sessions %}
-                                <option value="{{ s.id }}">{{ s.title}}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="start-date"><i class="fas fa-calendar-day"></i>
-                                Start Date</label>
-                            <input type="date" id="start-date" name="start_date" value="{{ start_date }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="end-date"><i class="fas fa-calendar-day"></i>
-                                End Date</label>
-                            <input type="date" id="end-date" name="end_date" value="{{ end_date }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label>&nbsp;</label>
-                            <button type="submit" class="search-btn"><i
-                                    class="fas fa-search"></i> Search</button>
-                        </div>
-                    </div>
-                </form>
+                <button type="submit" class="search-btn" style="align-self: center; margin-bottom: 0;">Search</button>
             </div>
 
-            {% if query %}
-            <div class="results-container">
-                <h2 class="results-header"><i class="fas fa-results"></i>
-                    Results for "{{ query }}"</h2>
+            <!-- Advanced Filters Grid -->
+            <div class="form-row" style="margin-top: 20px;">
+                <!-- Additional Filters Column -->
+                <div class="filter-column">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 15px; color: #444;">Additional Filters:</h3>
+                    
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="speaker-select">Politician</label>
+                        <select id="speaker-select" name="speaker">
+                            <option value="">All Politicians</option>
+                            {% for s in speakers %}
+                            <option value="{{ s.id }}" {% if s.id|stringformat:"s" == selected_speaker %}selected{% endif %}>{{ s.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                <div class="result-block">
-                    <h3><i class="fas fa-users"></i> Speakers</h3>
-                    {% for sp in speaker_results %}
-                    <div class="result-item">
-                        <div class="result-speaker">{{ sp.name }}</div>
-                        <div class="result-session">{{ sp.role }}</div>
+                    <div class="form-group">
+                        <label for="topic-select">Topic</label>
+                        <select id="topic-select" name="topic">
+                            <option value="">All Topics</option>
+                            {% for t in topics %}
+                            <option value="{{ t.id }}" {% if t.id|stringformat:"s" == selected_topic %}selected{% endif %}>{{ t.name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    {% empty %}
-                    <div class="empty-message">
-                        <i class="fas fa-inbox"></i> No speakers found.
-                    </div>
-                    {% endfor %}
                 </div>
 
-                <div class="result-block">
-                    <h3><i class="fas fa-bookmark"></i> Topics</h3>
-                    {% for t in topic_results %}
-                    <div class="result-item">
-                        <div class="result-speaker">{{ t.name }}</div>
-                        <div class="result-session">Session: {{ t.session.title}}</div>
+                <!-- Date Range Column -->
+                <div class="filter-column">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 15px; color: #444;">Date Range:</h3>
+                    
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="start-date">Start Date</label>
+                        <input type="date" id="start-date" name="start_date" value="{{ start_date }}">
                     </div>
-                    {% empty %}
-                    <div class="empty-message">
-                        <i class="fas fa-inbox"></i> No topics found.
+
+                    <div class="form-group">
+                        <label for="end-date">End Date</label>
+                        <input type="date" id="end-date" name="end_date" value="{{ end_date }}">
                     </div>
-                    {% endfor %}
                 </div>
 
-                <div class="result-block">
-                    <h3><i class="fas fa-quote-left"></i> Debate Segments</h3>
-                    {% for seg in segments %}
-                    <div class="result-item">
-                        <div class="result-speaker">{{ seg.speaker.name }}</div>
-                        <div class="result-session">{{ seg.session.title}}</div>
-                        <div class="result-text">
-                            <a href="{% url 'segment_detail' seg.id %}" class="text-primary">
-                                {{ seg.text|truncatewords:25 }}
-                            </a>
-                        </div>
+                <!-- Sorting & Session Column -->
+                <div class="filter-column">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 15px; color: #444;">Options:</h3>
+                    
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="session-select">Session</label>
+                        <select id="session-select" name="session">
+                            <option value="">All Sessions</option>
+                            {% for s in sessions %}
+                            <option value="{{ s.id }}" {% if s.id|stringformat:"s" == selected_session %}selected{% endif %}>{{ s.title }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    {% empty %}
-                    <div class="empty-message">
-                        <i class="fas fa-inbox"></i> No matching debate
-                        segments.
-                    </div>
-                    {% endfor %}
-                </div>
 
-                <div class="result-block">
-                    <h3><i class="fas fa-file-alt"></i> More Debate
-                        Segments</h3>
-                    {% for seg in results %}
-                    <div class="result-item">
-                        <div class="result-speaker">{{ seg.speaker.name }}</div>
-                        <div class="result-session">{{ seg.session.title}}</div>
-                        <div class="result-text">
-                            {{ seg.text|safe|truncatewords:40 }}
-                        </div>
+                    <div class="form-group">
+                        <label for="sort-select">Sort by Date</label>
+                        <select id="sort-select" name="sort">
+                            <option value="desc" {% if sort_order == "desc" %}selected{% endif %}>Newest First</option>
+                            <option value="asc" {% if sort_order == "asc" %}selected{% endif %}>Oldest First</option>
+                        </select>
                     </div>
-                    {% empty %}
-                    <div class="empty-message">
-                        <i class="fas fa-inbox"></i> No debate text found.
-                    </div>
-                    {% endfor %}
                 </div>
             </div>
-            {% else %}
-            <div class="no-results">
-                <i class="fas fa-search"></i>
-                <h2>Start Your Search</h2>
-                <p>Use the search form above to explore Ghana's parliamentary debates and discussions</p>
+        </form>
+    </div>
+
+    {% if query or selected_speaker or selected_topic or selected_session or start_date or end_date %}
+    <div class="results-container">
+        <h2 class="results-header">Search Results</h2>
+
+        <!-- Debate Segments (Main Results) -->
+        <div class="result-block">
+            <h3><i class="fas fa-quote-left"></i> Debate Segments</h3>
+            {% for seg in segments %}
+            <div class="result-item">
+                <div class="result-speaker">
+                    {{ seg.speaker.name|highlight:query }}
+                    {% if seg.speaker.party or seg.speaker.constituency %}
+                    <span style="font-weight: 400; font-size: 0.9rem; color: #666; margin-left: 10px;">
+                        ({{ seg.speaker.party|highlight:query }}{% if seg.speaker.party and seg.speaker.constituency %} - {% endif %}{{ seg.speaker.constituency|highlight:query }})
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="result-session">
+                    <i class="fas fa-calendar-alt"></i> {{ seg.session.sitting_date }} | {{ seg.session.title }}
+                    {% if seg.topic %} | <i class="fas fa-tag"></i> {{ seg.topic.name|highlight:query }}{% endif %}
+                </div>
+                <div class="result-text">
+                    <a href="{% url 'segment_detail' seg.id %}">
+                        {{ seg.text|clean_text|highlight:query|truncatewords_html:40 }}
+                    </a>
+                </div>
+
+
             </div>
-            {% endif %}
+            {% empty %}
+            <div class="empty-message">
+                <i class="fas fa-inbox"></i> No matching debate segments found.
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Sidebar results: Speakers & Topics (Only if query exists) -->
+        {% if query %}
+        <div class="form-row">
+            <div class="result-block">
+                <h3><i class="fas fa-users"></i> Politicians Match</h3>
+                {% for sp in speaker_results %}
+                <div class="result-item">
+                    <div class="result-speaker">{{ sp.name|highlight:query }}</div>
+                    <div class="result-session">{{ sp.role|highlight:query }}{% if sp.party %} | {{ sp.party|highlight:query }}{% endif %}</div>
+                </div>
+                {% empty %}
+                <div class="empty-message">None found.</div>
+                {% endfor %}
+            </div>
+
+            <div class="result-block">
+                <h3><i class="fas fa-bookmark"></i> Topics Match</h3>
+                {% for t in topic_results %}
+                <div class="result-item">
+                    <div class="result-speaker">{{ t.name|highlight:query }}</div>
+                    <div class="result-session">{{ t.session.title }}</div>
+                </div>
+                {% empty %}
+                <div class="empty-message">None found.</div>
+                {% endfor %}
+            </div>
+
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="no-results">
+        <i class="fas fa-search"></i>
+        <h2>Start Your Search</h2>
+        <p>Use the form above to search within Ghana's parliamentary records.</p>
+    </div>
+    {% endif %}
+
     </div>
 
 {% endblock %}

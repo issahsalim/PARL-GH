@@ -1,5 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Session, DebateSegment, Speaker, Topic, Summary, ParliamentaryLeadership
+from .utils.progress import PipelineProgress
+
 # app/views.py (add these imports at top)
 from django.db.models import Sum, Count
 from django.db.models.functions import TruncMonth
@@ -28,16 +30,19 @@ def home(request):
     total_speakers = Speaker.objects.count()
     total_topics = Topic.objects.count()
     
-    leadership = ParliamentaryLeadership.objects.all().order_by('order')
+    # Get leadership images as a dictionary: {role: image_url}
+    leadership_qs = ParliamentaryLeadership.objects.all()
+    leadership_map = {l.role: l.image.url for l in leadership_qs if l.image}
     
     context = {
         'total_segments': total_segments,
         'total_sessions': total_sessions,
         'total_speakers': total_speakers,
         'total_topics': total_topics,
-        'leadership': leadership,
+        'leadership_map': leadership_map,
     }
     return render(request, 'index.html', context)
+
 
 def session_list(request):
     sessions = Session.objects.all().order_by('-sitting_date')
@@ -70,55 +75,82 @@ def highlight(text, term):
 
 
 def search(request):
-    query = request.GET.get("q", "")
+    query = request.GET.get("q", "").strip()
     speaker_id = request.GET.get("speaker")
     topic_id = request.GET.get("topic")
     session_id = request.GET.get("session")
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
+    sort_order = request.GET.get("sort", "desc") # Default to newest first
 
-    segments = DebateSegment.objects.all().select_related('speaker', 'session')
+    segments = DebateSegment.objects.all().select_related('speaker', 'session', 'topic')
 
-    # TEXT SEARCH
-    if query:
-        segments = segments.filter(text__icontains=query)
-
-    # FILTERS
-    if speaker_id:
+    # ADVANCED FILTERS
+    if speaker_id and speaker_id.isdigit():
         segments = segments.filter(speaker_id=speaker_id)
 
-    if topic_id:
+    if topic_id and topic_id.isdigit():
         segments = segments.filter(topic_id=topic_id)
 
-    if session_id:
+    if session_id and session_id.isdigit():
         segments = segments.filter(session_id=session_id)
 
     if start_date:
-        segments = segments.filter(session__sitting_date__gte=start_date)
+        try:
+            segments = segments.filter(session__sitting_date__gte=start_date)
+        except (ValueError, TypeError):
+            pass
     
     if end_date:
-        segments = segments.filter(session__sitting_date__lte=end_date)
+        try:
+            segments = segments.filter(session__sitting_date__lte=end_date)
+        except (ValueError, TypeError):
+            pass
 
-    # SUMMARY RESULTS (for left side)
+    # MULTI-FIELD KEYWORD SEARCH
+    if query:
+        # Search in segment text, speaker name, speaker party, speaker constituency, or topic name
+        segments = segments.filter(
+            Q(text__icontains=query) |
+            Q(speaker__name__icontains=query) |
+            Q(speaker__party__icontains=query) |
+            Q(speaker__constituency__icontains=query) |
+            Q(topic__name__icontains=query)
+        )
+
+    # SORTING
+    if sort_order == "asc":
+        segments = segments.order_by('session__sitting_date', 'id')
+    else:
+        segments = segments.order_by('-session__sitting_date', '-id')
+
+    # SUMMARY RESULTS (for sidebars/extra info)
     session_results = Session.objects.filter(title__icontains=query) if query else []
     topic_results = Topic.objects.filter(name__icontains=query) if query else []
-    speaker_results = Speaker.objects.filter(name__icontains=query) if query else []
+    speaker_results = Speaker.objects.filter(
+        Q(name__icontains=query) | Q(party__icontains=query) | Q(constituency__icontains=query)
+    ) if query else []
 
     context = {
         "query": query,
-        "segments": segments,  # MAIN RESULTS
+        "segments": segments[:100],  # Limit to 100 for performance
         "session_results": session_results,
         "topic_results": topic_results,
         "speaker_results": speaker_results,
         "start_date": start_date,
         "end_date": end_date,
+        "selected_speaker": speaker_id,
+        "selected_topic": topic_id,
+        "selected_session": session_id,
+        "sort_order": sort_order,
 
         # Filter dropdown values
-        "speakers": Speaker.objects.all(),
-        "topics": Topic.objects.all(),
-        "sessions": Session.objects.all(),
+        "speakers": Speaker.objects.all().order_by('name'),
+        "topics": Topic.objects.all().order_by('name'),
+        "sessions": Session.objects.all().order_by('-sitting_date'),
     }
     return render(request, "search.html", context)
+
 
 
 
@@ -421,6 +453,17 @@ def api_quick_summary(request):
     except Exception as e:
         logger.error(f"API summarization error: {e}")
         return JsonResponse({'error': str(e)}, status=500)
+
+
+def api_pipeline_status(request):
+    """
+    Returns the current status of the pipeline stored in cache.
+    """
+    progress = PipelineProgress.get()
+    if progress:
+        return JsonResponse(progress)
+    return JsonResponse({'message': 'Idle'})
+
 
 
 

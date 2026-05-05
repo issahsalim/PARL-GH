@@ -1,15 +1,26 @@
+{% load search_extras %}
+
 <div class="modal" tabindex="-1" id="summaryModal">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
+            <style>
+                .summary-text-box {
+                    text-align: justify;
+                    line-height: 1.7;
+                    color: #444;
+                    font-size: 1.05rem;
+                }
+            </style>
             <div class="modal-header">
-                <h5 class="modal-title">Summary</h5>
+                <h5 class="modal-title">Summary Result</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"
                     aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 {% if summary %}
-                <p><strong>Summary:</strong></p>
-                <div class="mb-3">{{ summary.summary_text|linebreaks }}</div>
+                <p><strong>Overview:</strong></p>
+                <div class="mb-3 summary-text-box">{{ summary.summary_text|clean_text|linebreaks }}</div>
+
 
                 {% if summary.speakers_mentioned %}
                 <p><strong>Speakers mentioned:</strong></p>

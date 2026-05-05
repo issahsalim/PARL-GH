@@ -44,10 +44,13 @@ class Topic(models.Model):
 
 class Speaker(models.Model):
     name = models.CharField(max_length=500)
-    role = models.CharField(max_length=100, blank=True)  # MP, Minister, Speaker
+    role = models.CharField(max_length=500, blank=True)  # MP, Minister, Speaker
+    party = models.CharField(max_length=100, blank=True, null=True)
+    constituency = models.CharField(max_length=200, blank=True, null=True)
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.party or 'No Party'})"
+
     
 
 class DebateSegment(models.Model):
@@ -108,17 +111,13 @@ class Summary(models.Model):
         return f"Summary of {self.get_content_type_display()} ({self.created_at.strftime('%Y-%m-%d')})"
     
 class ParliamentaryLeadership(models.Model):
-    role = models.CharField(max_length=100) # e.g. "President of Ghana"
-    name = models.CharField(max_length=200)
-    title = models.CharField(max_length=100) # e.g. "Executive Leadership"
-    description = models.TextField()
+    role = models.CharField(max_length=100, unique=True) # e.g. "president", "speaker"
     image = models.ImageField(upload_to='leadership/')
-    order = models.IntegerField(default=0)
 
     class Meta:
         verbose_name_plural = "Parliamentary Leadership"
-        ordering = ['order']
 
     def __str__(self):
-        return f"{self.role}: {self.name}"
+        return self.role
+
     

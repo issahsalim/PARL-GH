@@ -18,4 +18,6 @@ urlpatterns = [
     
     # API endpoints
     path('api/summarize/', views.api_quick_summary, name='api_quick_summary'),
+    path('api/pipeline-status/', views.api_pipeline_status, name='api_pipeline_status'),
 ]
+

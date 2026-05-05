@@ -12,6 +12,8 @@ from app.models import (
 ) 
 
 from app.utils.hansards_downloader import download_new_hansards
+from app.utils.progress import PipelineProgress
+
 
 def extract_topics(text):
     """
@@ -110,9 +112,6 @@ def get_or_create_session(hansard_file):
 # 4. Speaker & Segment Extraction (SAFE)
 # =========================================================
 def extract_speakers_and_segments(session, pages):
-
-    WPM = 130  # analytics later
-
     def safe_word_count(text):
         return len(text.split()) if text else 0
 
@@ -125,34 +124,75 @@ def extract_speakers_and_segments(session, pages):
         page_boundaries.append((p["page_number"], cursor))
         cursor += len(p["text"]) + 1
 
+    # Improved speaker patterns for Ghana Hansards - More flexible
+    # Matches: Hon. Name:, Mr. Name:, THE SPEAKER:, Mr. Speaker:, Name (NDC - Const):, etc.
     speaker_patterns = [
-        r"(Hon\.\s+[A-Z][A-Za-z\s\.-]+)\s*\((.*?)\):",
-        r"(Mr\.|Ms\.|Mrs\.)\s+[A-Z][A-Za-z\s\.-]+:",
-        r"(THE SPEAKER):",
-        r"[A-Z][A-Za-z\s\.-]+ \(MP\):"
+        # Pattern for "Title Name (Info):" or "Name (Info):" or "Title Name:"
+        r"(?:(Hon\.|Mr\.|Ms\.|Mrs\.|THE\s+SPEAKER|Minister\s+for\s+[A-Za-z\s]+)\s+)?([A-Z][A-Za-z\s\.-]+)(?:\s*\((.*?)\))?\s*:",
+        # Pattern for specific roles like "Mr First Deputy Speaker:"
+        r"((?:Mr\.|Hon\.)?\s*(?:First|Second)?\s*(?:Deputy)?\s*Speaker)\s*:",
     ]
 
     combined_pattern = "(" + "|".join(speaker_patterns) + ")"
     matches = list(re.finditer(combined_pattern, full_text))
 
     if not matches:
+        print("⚠️ No speakers found in text.")
         return
 
     default_topic = Topic.objects.filter(session=session).first()
+    
+    segments_created = 0
 
     for i, match in enumerate(matches):
-        speaker_name = match.group(1).strip() if match.group(1) else "Unknown"
-        role = match.group(2).strip()[:100] if match.lastindex and match.lastindex >= 2 else ""
+        full_match = match.group(1).strip()
+        
+        name = "Unknown"
+        role = ""
+        party = ""
+        constituency = ""
+
+        # Using the flexible Pattern 1
+        if match.group(2) or match.group(3):
+            title = match.group(2).strip() if match.group(2) else ""
+            raw_name = match.group(3).strip() if match.group(3) else ""
+            extra_info = match.group(4).strip() if match.group(4) else ""
+            
+            name = raw_name
+            if "Minister" in title:
+                role = title
+            elif "Speaker" in raw_name or "Speaker" in title:
+                role = "Speaker"
+                name = "THE SPEAKER"
+            elif "MP" in extra_info:
+                role = "MP"
+            
+            # Try to parse party and constituency from extra_info (NDC - Zabzugu or NDC ? Zabzugu)
+            if extra_info:
+                # Split by common separators (-, ?, , |)
+                parts = re.split(r'[-\?|]', extra_info)
+                if len(parts) >= 1:
+                    party = parts[0].strip()
+                if len(parts) >= 2:
+                    constituency = parts[1].strip()
+
+        # Specific role match
+        elif match.group(5):
+            name = "THE SPEAKER"
+            role = match.group(5).strip()
+
+        # Clean up
+        if name == "Unknown" and full_match:
+            name = full_match.replace(":", "").strip()
 
         seg_start = match.end()
         seg_end = matches[i + 1].start() if i + 1 < len(matches) else len(full_text)
         segment_text = full_text[seg_start:seg_end].strip()
 
-        if not segment_text:
+        if not segment_text or len(segment_text) < 10:
             continue
 
-        # Page detection
-        start_page = None
+        start_page = 1
         for page_num, pos in page_boundaries:
             if pos <= seg_start:
                 start_page = page_num
@@ -160,11 +200,15 @@ def extract_speakers_and_segments(session, pages):
                 break
 
         speaker, _ = Speaker.objects.get_or_create(
-            name=speaker_name,
-            defaults={"role": role}
+            name=name,
+            defaults={
+                "role": role,
+                "party": party,
+                "constituency": constituency
+            }
         )
-
-        # 🔒 Prevent duplicate segments
+        
+        # Prevent duplicate segments
         exists = DebateSegment.objects.filter(
             session=session,
             speaker=speaker,
@@ -172,17 +216,20 @@ def extract_speakers_and_segments(session, pages):
             text__startswith=segment_text[:100]
         ).exists()
 
-        if exists:
-            continue
+        if not exists:
+            DebateSegment.objects.create(
+                session=session,
+                speaker=speaker,
+                topic=default_topic,
+                text=segment_text,
+                start_page=start_page,
+                word_count=safe_word_count(segment_text)
+            )
+            segments_created += 1
 
-        DebateSegment.objects.create(
-            session=session,
-            speaker=speaker,
-            topic=default_topic,
-            text=segment_text,
-            start_page=start_page,
-            word_count=safe_word_count(segment_text)
-        )
+    print(f"✅ Extracted {segments_created} segments and {Speaker.objects.filter(debatesegment__session=session).distinct().count()} unique speakers.")
+
+
 
 
 # =========================================================
@@ -195,18 +242,22 @@ def process_pdf(hansard_file):
         print("⏭️  Already processed, skipping")
         return
 
+    PipelineProgress.update(f"Extracting text from: {hansard_file.file_name}")
     pages = extract_text_from_pdf(hansard_file.file_path)
     session = get_or_create_session(hansard_file)
 
     full_text = "\n".join(p["text"] for p in pages)
 
     # ✅ 1. CREATE TOPICS FIRST
+    PipelineProgress.update(f"Identifying topics in: {hansard_file.file_name}")
     create_topics_for_session(session, full_text)
 
     # ✅ 2. THEN extract speakers & segments
+    PipelineProgress.update(f"Extracting speakers and debate segments...")
     extract_speakers_and_segments(session, pages)
 
     print(f"✅ Completed: {session.title}")
+
 
 
 # =========================================================
@@ -239,17 +290,24 @@ def run_hansard_pipeline(folder_path="ghana_hansards"):
 
         files = HansardFile.objects.all().order_by("date_downloaded")
 
+        PipelineProgress.update("Processing downloaded files...")
         processed = 0
-        for hansard in files:
+        total_files = files.count()
+        
+        for i, hansard in enumerate(files):
             if not os.path.exists(hansard.file_path):
                 continue
 
             try:
+                PipelineProgress.update(f"Processing ({i+1}/{total_files}): {hansard.file_name}", current=i+1, total=total_files)
                 process_pdf(hansard)
                 processed += 1
             except Exception as e:
                 print(f"❌ Error processing {hansard.file_name}: {str(e)}")
                 continue
+
+        PipelineProgress.clear()
+
 
         result_msg = f"\n🎉 Pipeline finished successfully\n✅ Files processed: {processed}\n📥 Files downloaded: {new_files}"
         print(result_msg)

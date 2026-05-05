@@ -1,10 +1,141 @@
 {% extends "admin/base_site.html" %}
 
 {% block content %}
+<style>
+    #loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        color: white;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        backdrop-filter: blur(5px);
+    }
+
+    .loader {
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #007bff;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    .loading-text {
+        text-align: center;
+    }
+
+    .loading-text h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        animation: pulse 2s infinite ease-in-out;
+    }
+
+    .loading-text p {
+        margin-top: 10px;
+        opacity: 0.8;
+        font-size: 1rem;
+        min-height: 1.2em;
+    }
+
+    .progress-container {
+        width: 300px;
+        height: 10px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 5px;
+        margin-top: 20px;
+        overflow: hidden;
+        display: none;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: #007bff;
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+</style>
+
+<div id="loading-overlay">
+    <div class="loader"></div>
+    <div class="loading-text">
+        <h2 id="loading-title">Processing Hansard PDF</h2>
+        <p id="loading-desc">Extracting text and generating summaries...<br>This may take a moment. Please wait.</p>
+        <div class="progress-container" id="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+    </div>
+</div>
+
+
 <h1>Upload Hansard PDF</h1>
-<form method="POST" enctype="multipart/form-data">
+<form method="POST" enctype="multipart/form-data" id="upload-form">
     {% csrf_token %}
     {{ form.as_p }}
-    <button class="button" type="submit">Upload & Process</button>
+    <button class="button" type="submit" id="submit-btn">Upload & Process</button>
 </form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('upload-form');
+        const overlay = document.getElementById('loading-overlay');
+        const desc = document.getElementById('loading-desc');
+        const progContainer = document.getElementById('progress-container');
+        const progBar = document.getElementById('progress-bar');
+        
+        let pollingInterval = null;
+
+        function startPolling() {
+            if (pollingInterval) return;
+            
+            pollingInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/api/pipeline-status/');
+                    const data = await response.json();
+                    
+                    if (data.message && data.message !== 'Idle') {
+                        desc.innerText = data.message;
+                        
+                        if (data.current && data.total) {
+                            const percent = (data.current / data.total) * 100;
+                            progContainer.style.display = 'block';
+                            progBar.style.width = percent + '%';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error polling status:', error);
+                }
+            }, 2000);
+        }
+
+        if (form) {
+            form.addEventListener('submit', function() {
+                overlay.style.display = 'flex';
+                startPolling();
+            });
+        }
+    });
+</script>
 {% endblock %}
+
+

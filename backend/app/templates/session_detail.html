@@ -2,6 +2,9 @@
 
 {% block title %}{{ session.title }} - ParlGH{% endblock %}
 
+{% load search_extras %}
+
+
 {% block extra_css %}
 <style>
     .session-header {
@@ -70,12 +73,14 @@
     }
 
     .segment-text {
-        color: #555;
+        color: #444;
         line-height: 1.8;
-        font-size: 0.95rem;
-        white-space: pre-wrap;
+        font-size: 1.05rem;
         word-wrap: break-word;
+        text-align: justify;
+        width: 100%;
     }
+
 
     .no-segments {
         text-align: center;
@@ -189,7 +194,8 @@
         <i class="fas fa-microphone-alt"></i>
         {{ segment.speaker.name }}
     </div>
-    <div class="segment-text">{{ segment.text|linebreaks }}</div>
+    <div class="segment-text">{{ segment.text|clean_text|linebreaks }}</div>
+
     <div style="margin-top: 15px;">
         <a href="#" data-url="{% url 'summarize_segment' segment.id %}"
             class="btn btn-sm btn-outline-info summary-segment-btn">
