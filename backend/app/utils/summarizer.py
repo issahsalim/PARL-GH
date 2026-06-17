@@ -84,16 +84,7 @@ class HansardSummarizer:
     
     def summarize_with_structure(self, text: str) -> Dict[str, Any]:
         """
-        Generate a structured summary with extracted entities.
-        
-        Returns:
-            Dictionary with:
-            - summary: The summarized text
-            - speakers: List of speakers mentioned
-            - motions: List of motions detected
-            - outcomes: List of outcomes/decisions
-            - word_count_original: Original text word count
-            - word_count_summary: Summary word count
+        Generate a structured summary with extracted entities and analytics.
         """ 
         # Generate summary
         summary = self.summarize_text(text)
@@ -103,15 +94,107 @@ class HansardSummarizer:
         motions = self._extract_motions(text)
         outcomes = self._extract_outcomes(text)
         
+        # Advanced analytics
+        sentiment = self._extract_sentiment(text)
+        action_items = self._extract_action_items(text)
+        speaker_stats = self._calculate_speaker_stats(text, speakers)
+        timeline = self._generate_timeline(text, speakers, motions)
+        
         return {
             'summary': summary,
-            'speakers': list(set(speakers)),  # Remove duplicates
+            'speakers': list(set(speakers)),
             'motions': list(set(motions)),
             'outcomes': list(set(outcomes)),
+            'sentiment': sentiment,
+            'action_items': action_items,
+            'speaker_stats': speaker_stats,
+            'timeline': timeline,
             'word_count_original': len(text.split()),
             'word_count_summary': len(summary.split()),
             'reduction_percentage': round((1 - len(summary.split()) / len(text.split())) * 100, 2)
         }
+
+    def _extract_sentiment(self, text: str) -> Dict[str, float]:
+        """Simple heuristic for sentiment analysis"""
+        pos_words = ['agree', 'support', 'favor', 'passed', 'excellent', 'progress', 'benefit', 'good', 'success', 'approved']
+        neg_words = ['disagree', 'object', 'reject', 'oppose', 'failed', 'problem', 'concern', 'negative', 'poor', 'danger']
+        
+        text_lower = text.lower()
+        pos_count = sum(text_lower.count(word) for word in pos_words)
+        neg_count = sum(text_lower.count(word) for word in neg_words)
+        total = pos_count + neg_count + 10 # Buffer to avoid empty bias
+        
+        return {
+            'positive': round((pos_count / total) * 100, 1),
+            'negative': round((neg_count / total) * 100, 1),
+            'neutral': round(((total - pos_count - neg_count) / total) * 100, 1)
+        }
+
+    def _extract_action_items(self, text: str) -> List[str]:
+        """Extract tasks and follow-ups"""
+        actions = []
+        patterns = [
+            r'(?:will|must|should|agreed to)\s+(?:submit|meet|investigate|report|review|organize|create|form)\s+([^.!?\n]+[.!?])',
+            r'(?:deadline|by the end of|no later than)\s+([^.!?\n]+[.!?])',
+            r'(?:Committee|Task Force)\s+(?:to|will)\s+([^.!?\n]+[.!?])'
+        ]
+        for pattern in patterns:
+            for match in re.finditer(pattern, text, re.IGNORECASE):
+                action = match.group(1).strip()
+                if 10 < len(action) < 200:
+                    actions.append(action)
+        return list(set(actions))[:5]
+
+    def _calculate_speaker_stats(self, text: str, speakers: List[str]) -> Dict[str, Any]:
+        """Calculate word count distribution per speaker"""
+        stats = {}
+        total_words = len(text.split())
+        
+        # This is a simplification: split text by speaker names to estimate their portions
+        for speaker in speakers:
+            # Look for appearances of this speaker and count words until next speaker
+            pattern = re.escape(speaker) + r'\s*:(.*?)(?=' + '|'.join([re.escape(s) for s in speakers if s != speaker]) + r'|$)'
+            fragments = re.findall(pattern, text, re.DOTALL)
+            words = sum(len(f.split()) for f in fragments)
+            if words > 0:
+                stats[speaker] = {
+                    'word_count': words,
+                    'percentage': round((words / total_words) * 100, 1)
+                }
+        return stats
+
+    def _generate_timeline(self, text: str, speakers: List[str], motions: List[str]) -> List[Dict[str, Any]]:
+        """Generate sequential events for the Gantt chart"""
+        timeline = []
+        # Find positions of speakers and motions to create a sequence
+        events = []
+        for speaker in set(speakers):
+            for m in re.finditer(re.escape(speaker) + r'\s*:', text):
+                events.append({'type': 'speaker', 'label': speaker, 'pos': m.start()})
+        
+        for motion in motions:
+            # Just take a snippet of the motion for the label
+            label = (motion[:30] + '...') if len(motion) > 30 else motion
+            for m in re.finditer(re.escape(motion), text):
+                events.append({'type': 'motion', 'label': label, 'pos': m.start()})
+                
+        # Sort by position
+        events.sort(key=lambda x: x['pos'])
+        
+        # Convert to relative time/offset for the chart
+        text_len = len(text)
+        for i, event in enumerate(events):
+            start_offset = round((event['pos'] / text_len) * 100)
+            end_offset = round((events[i+1]['pos'] / text_len) * 100) if i+1 < len(events) else 100
+            
+            timeline.append({
+                'type': event['type'],
+                'label': event['label'],
+                'start': start_offset,
+                'end': end_offset if end_offset > start_offset else start_offset + 5
+            })
+            
+        return timeline[:15] # Limit for display
     
     @staticmethod
     def _chunk_text(text: str, max_chunk_length: int = 1000) -> List[str]:

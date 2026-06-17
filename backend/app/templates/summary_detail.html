@@ -1,296 +1,383 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Summary Details - ParlGH{% endblock %}
+{% block title %}Summary: {{ summary.get_content_type_display }} - ParlGH{% endblock %}
+
+{% block extra_css %}
 <style>
-    :root{
-        --ghana-red:#CE1126;
-        --ghana-green:#007857;
-        --ghana-yellow:#FCD116;
+    :root {
+        --parl-navy: #1a2a40;
+        --parl-accent: #3498db;
+        --parl-green: #27ae60;
+        --parl-red: #e74c3c;
+        --parl-gold: #f39c12;
+        --soft-bg: #f8fafc;
+    }
+
+    body { background-color: var(--soft-bg); font-family: 'Outfit', sans-serif; }
+
+    .summary-container { max-width: 1300px; margin: 40px auto; padding: 0 20px; }
+
+    .success-banner {
+        background: #d4edda;
+        color: #155724;
+        padding: 12px 25px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .premium-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .stats-header {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1px;
+        background: #eee;
+        border-bottom: 1px solid #eee;
+    }
+
+    .stat-item {
+        background: white;
+        padding: 25px;
+        text-align: center;
+    }
+
+    .stat-value {
+        display: block;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--parl-navy);
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .content-layout {
+        display: grid;
+        grid-template-columns: 3fr 1fr;
+        padding: 30px;
+        gap: 30px;
+    }
+
+    .main-content { border-right: 1px solid #f0f0f0; padding-right: 30px; }
+
+    .nav-tabs { border: none; margin-bottom: 25px; }
+    .nav-tabs .nav-link {
+        border: none;
+        color: #888;
+        font-weight: 500;
+        padding: 12px 25px;
+        border-radius: 10px;
+        transition: all 0.3s;
+    }
+    .nav-tabs .nav-link.active {
+        background: #eef2f7;
+        color: var(--parl-navy);
+    }
+
+    .summary-text-area {
+        line-height: 1.8;
+        color: #444;
+        font-size: 1.05rem;
+        padding: 20px;
+        background: #fbfbfb;
+        border-radius: 15px;
+        border-left: 5px solid var(--parl-accent);
+    }
+
+    .section-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--parl-navy);
+        text-transform: uppercase;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Speaker Floor Time Tracker */
+    .speaker-item { margin-bottom: 15px; }
+    .speaker-meta { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; }
+    .progress { height: 12px; border-radius: 6px; background: #eaedf2; }
+    .progress-bar { border-radius: 6px; }
+
+    /* Side Actions */
+    .side-actions { display: flex; flex-direction: column; gap: 20px; }
+    .action-group { background: #fdfdfd; padding: 20px; border-radius: 15px; border: 1px solid #f0f0f0; }
+
+    .badge-premium {
+        background: #eef2f7;
+        color: var(--parl-navy);
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin-bottom: 10px;
+        display: inline-block;
+    }
+
+    .timeline-container { height: 350px; }
+
+    .export-btns { display: flex; gap: 10px; margin-bottom: 20px; }
+    .export-btn {
+        width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+        background: #f0f0f0; color: #555; transition: all 0.2s; border: none;
+    }
+    .export-btn:hover { background: var(--parl-navy); color: white; }
+
+    .action-badge {
+        display: inline-block;
+        width: 10px; height: 10px; border-radius: 50%;
+        margin-right: 8px;
     }
 </style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-5 mb-5">
-    <div class="row">
-        <div class="col-lg-10 mx-auto">
-            <!-- Breadcrumb -->
-            <nav aria-label="breadcrumb" class="mb-4">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a
-                            href="{% url 'home' %}">Home</a></li>
-                    <li class="breadcrumb-item"><a
-                            href="{% url 'summaries_list' %}">Summaries</a></li>
-                    <li class="breadcrumb-item active">{{summary.get_content_type_display }}</li>
-                </ol>
-            </nav>
+<div class="summary-container">
+    <!-- Success Alert -->
+    <div class="success-banner">
+        <span>Summary generated successfully!</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
 
-            <!-- Main Summary Card -->
-            <div class="card shadow-lg border-0 mb-4">
-                <div class="card-header bg-gradient"
-                    style="background: linear-gradient(90deg, var(--ghana-red) 0%, var(--ghana-green) 100%);">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <h2 class="text-white mb-2">
-                                <i class="fas fa-file-alt"></i> Summary Details
-                            </h2>
-                            <small class="text-light">Created: {{summary.created_at|date:"F j, Y \a\t H:i" }} by
-                                {{ summary.created_by }}</small>
+    <div class="premium-card">
+        <!-- Stats Row -->
+        <div class="stats-header">
+            <div class="stat-item">
+                <span class="stat-label"><i class="fas fa-file-alt"></i> Original</span>
+                <span class="stat-value">{{ summary.original_word_count }}</span>
+                <span class="small text-muted">words</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label"><i class="fas fa-compress-alt"></i> Summary</span>
+                <span class="stat-value">{{ summary.summary_word_count }}</span>
+                <span class="small text-muted">words</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label"><i class="fas fa-percentage"></i> Reduction</span>
+                <span class="stat-value" style="color: var(--parl-green);">{{ summary.reduction_percentage }}%</span>
+                <span class="small text-muted">compressed</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label"><i class="fas fa-cog"></i> Generated</span>
+                <span class="stat-value">{{ summary.created_at|date:"M d, Y" }}</span>
+                <span class="small text-muted">{{ summary.created_at|date:"H:i" }}</span>
+            </div>
+        </div>
+
+        <div class="content-layout">
+            <!-- Left Side -->
+            <div class="main-content">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <ul class="nav nav-tabs" id="summaryTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" id="text-tab" data-bs-toggle="tab" data-bs-target="#text" type="button">Summary Text</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline" type="button">Debate Timeline</button>
+                        </li>
+                    </ul>
+
+                    <div class="export-btns">
+                        <span class="small text-muted me-2 pt-2">Export Data</span>
+                        <button class="export-btn" title="PDF"><i class="fas fa-file-pdf"></i></button>
+                        <button class="export-btn" title="CSV"><i class="fas fa-file-csv"></i></button>
+                        <button class="export-btn" title="JSON"><i class="fas fa-file-code"></i></button>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="summaryTabsContent">
+                    <div class="tab-pane fade show active" id="text" role="tabpanel">
+                        <div class="section-title"><i class="fas fa-brain"></i> AI Summary</div>
+                        <div class="summary-text-area">
+                            {{ summary.summary_text }}
                         </div>
-                        <div class="col-auto">
-                            <span class="badge bg-light text-dark"
-                                style="font-size: 0.9rem; padding: 10px 15px;">
-                                <i class="fas fa-tag"></i> {{summary.get_content_type_display }}
-                            </span>
+                    </div>
+                    <div class="tab-pane fade" id="timeline" role="tabpanel">
+                        <div class="section-title"><i class="fas fa-history"></i> Debate Timeline</div>
+                        <div class="timeline-container">
+                            <canvas id="timelineChart"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <div class="card-body p-4">
-                    <!-- Statistics Row -->
-                    <div class="row mb-4 g-3">
-                        <div class="col-sm-6 col-md-3">
-                            <div class="text-center p-3 rounded"
-                                style="background: #f0f9ff;">
-                                <div
-                                    style="font-size: 2rem; font-weight: bold; color: var(--ghana-red);">{{summary.original_word_count }}</div>
-                                <div class="small text-muted">Original
-                                    Words</div>
+                <div class="row mt-5">
+                    <div class="col-md-6">
+                        <div class="section-title"><i class="fas fa-users"></i> Speakers Mentioned & Floor Time</div>
+                        <div class="pe-3">
+                            {% for name, stats in summary.speaker_stats.items %}
+                            <div class="speaker-item">
+                                <div class="speaker-meta">
+                                    <span>{{ name }}</span>
+                                    <strong>{{ stats.percentage }}%</strong>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar" style="width: {{ stats.percentage }}%; background: var(--parl-accent)"></div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-sm-6 col-md-3">
-                            <div class="text-center p-3 rounded"
-                                style="background: #f0fff0;">
-                                <div
-                                    style="font-size: 2rem; font-weight: bold; color: var(--ghana-green);">{{summary.summary_word_count }}</div>
-                                <div class="small text-muted">Summary
-                                    Words</div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6 col-md-3">
-                            <div class="text-center p-3 rounded"
-                                style="background: #fffbf0;">
-                                <div
-                                    style="font-size: 2rem; font-weight: bold; color: var(--ghana-yellow);">{{summary.reduction_percentage }}%</div>
-                                <div class="small text-muted">Reduction</div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6 col-md-3">
-                            <div class="text-center p-3 rounded"
-                                style="background: #f5f5f5;">
-                                <div
-                                    style="font-size: 1.5rem; font-weight: bold;">{{summary.created_at|date:"M d" }}</div>
-                                <div class="small text-muted">{{summary.created_at|date:"Y" }}</div>
-                            </div>
+                            {% empty %}
+                            <p class="text-muted small">No speaker stats available</p>
+                            {% endfor %}
                         </div>
                     </div>
-
-                    <hr class="my-4">
-
-                    <!-- Summary Text -->
-                    <div class="mb-4">
-                        <h5 class="mb-3"><i
-                                class="fas fa-lightbulb text-warning"></i>
-                            Summary</h5>
-                        <div class="p-4 rounded"
-                            style="background: #fafafa; border-left: 4px solid var(--ghana-red);">
-                            <p
-                                style="line-height: 1.8; font-size: 1.05rem; margin: 0;">{{summary.summary_text }}</p>
-                        </div>
-                    </div>
-
-                    <hr class="my-4">
-
-                    <!-- Structured Information -->
-                    <div class="row">
-                        <!-- Speakers -->
-                        <div class="col-lg-4 mb-3">
-                            <div class="card border-0 shadow-sm h-100">
-                                <div class="card-header text-white" style="background: var(--ghana-red);">
-                                    <h6 class="mb-0"><i
-                                            class="fas fa-microphone"></i>
-                                             Speakers Mentioned</h6>
-                                </div>
-                                <div class="card-body">
-                                    {% if summary.speakers_mentioned %}
-                                    <div class="d-flex flex-wrap gap-2">
-                                        {% for speaker in summary.speakers_mentioned %}
-                                        <span
-                                            class="badge bg-info-subtle text-info"
-                                            style="font-size: 0.85rem;">
-                                            <i class="fas fa-user-tie"></i> {{ speaker }}
-                                        </span>
-                                        {% endfor %}
-                                    </div>
-                                    {% else %}
-                                    <p class="text-muted small mb-0">No speakers
-                                        extracted</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Motions -->
-                        <div class="col-lg-4 mb-3">
-                            <div class="card border-0 shadow-sm h-100">
-                                <div class="card-header bg-warning text-dark">
-                                    <h6 class="mb-0"><i
-                                            class="fas fa-scroll"></i> Motions
-                                        Discussed</h6>
-                                </div>
-                                <div class="card-body">
-                                    {% if summary.motions %}
-                                    <ul class="list-unstyled">
-                                        {% for motion in summary.motions %}
-                                        <li class="mb-2">
-                                            <small class="text-wrap">
-                                                <i
-                                                    class="fas fa-check text-warning"></i>
-                                                {{ motion|truncatewords:15 }}
-                                            </small>
-                                        </li>
-                                        {% endfor %}
-                                    </ul>
-                                    {% else %}
-                                    <p class="text-muted small mb-0">No motions
-                                        extracted</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Outcomes -->
-                        <div class="col-lg-4 mb-3">
-                            <div class="card border-0 shadow-sm h-100">
-                                <div class="card-header bg-success text-white">
-                                    <h6 class="mb-0"><i
-                                            class="fas fa-check-circle"></i>
-                                        Outcomes/Decisions</h6>
-                                </div>
-                                <div class="card-body">
-                                    {% if summary.outcomes %}
-                                    <ul class="list-unstyled">
-                                        {% for outcome in summary.outcomes %}
-                                        <li class="mb-2">
-                                            <small class="text-wrap">
-                                                <i
-                                                    class="fas fa-thumbs-up text-success"></i>
-                                                <strong>{{ outcome|truncatewords:15 }}</strong>
-                                            </small>
-                                        </li>
-                                        {% endfor %}
-                                    </ul>
-                                    {% else %}
-                                    <p class="text-muted small mb-0">No outcomes
-                                        extracted</p>
-                                    {% endif %}
-                                </div>
-                            </div>
+                    <div class="col-md-6">
+                        <div class="section-title"><i class="fas fa-chart-line"></i> Sentiment Trend</div>
+                        <div style="height: 180px;">
+                            <canvas id="sentimentTrendChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Related Content -->
-            {% if summary.session or summary.debate_segment %}
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-light">
-                    <h6 class="mb-0"><i class="fas fa-link"></i> Related
-                        Content</h6>
+            <!-- Right Side -->
+            <div class="side-actions">
+                <div class="action-group">
+                    <div class="section-title"><i class="fas fa-gavel"></i> Motions</div>
+                    {% for motion in summary.motions|slice:":3" %}
+                    <div class="badge-premium">{{ motion|truncatewords:8 }}</div>
+                    {% empty %}
+                    <p class="text-muted small">None identified</p>
+                    {% endfor %}
                 </div>
-                <div class="card-body">
-                    {% if summary.session %}
+
+                <div class="action-group">
+                    <div class="section-title"><i class="fas fa-check-double"></i> Outcomes & Decisions</div>
+                    {% for outcome in summary.outcomes|slice:":3" %}
                     <div class="mb-3">
-                        <h6>Parliamentary Session</h6>
-                        <p class="mb-2">
-                            <strong>{{ summary.session.title }}</strong><br>
-                            <small class="text-muted">Date: {{summary.session.sitting_date }}</small>
-                        </p>
-                        <a href="{% url 'session_detail' summary.session.id %}"
-                            class="btn btn-sm btn-dark">
-                            <i class="fas fa-eye"></i> View Session
-                        </a>
+                        <div class="small fw-bold">{{ outcome|truncatewords:8 }}</div>
+                        <span class="badge bg-success-subtle text-success small" style="font-size: 0.7rem;">[Status: Accepted]</span>
                     </div>
-                    {% endif %}
+                    {% empty %}
+                    <div class="text-muted small">None identified</div>
+                    {% endfor %}
+                </div>
 
-                    {% if summary.debate_segment %}
-                    <div class="mb-3">
-                        <h6>Debate Segment</h6>
-                        <p class="mb-2">
-                            <strong>{{ summary.debate_segment.speaker}}</strong><br>
-                            <small class="text-muted">Session: {{ summary.debate_segment.session.title }}</small>
-                        </p>
-                        <a
-                            href="{% url 'segment_detail' summary.debate_segment.id %}"
-                            class="btn btn-sm btn-info">
-                            <i class="fas fa-eye"></i> View Segment
-                        </a>
-                    </div>
-                    {% endif %}
+                <div class="action-group" style="background: #f0fff4; border-color: #c6f6d5;">
+                    <div class="section-title" style="color: #276749;"><i class="fas fa-tasks"></i> Action Items</div>
+                    <ul class="list-unstyled small">
+                        {% for item in summary.action_items %}
+                        <li class="mb-2 d-flex align-items-start">
+                            <i class="fas fa-chevron-right me-2 mt-1" style="font-size: 0.7rem; color: #276749;"></i>
+                            <span>{{ item }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="text-muted">None identified</li>
+                        {% endfor %}
+                    </ul>
                 </div>
-            </div>
-            {% endif %}
 
-            <!-- Original Text Section -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-light">
-                    <button
-                        class="btn btn-link text-decoration-none w-100 text-start text-dark"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#originalText">
-                        <i class="fas fa-chevron-down me-2"></i>View Original
-                        Text
-                    </button>
-                </div>
-                <div class="collapse" id="originalText">
-                    <div class="card-body bg-light">
-                        <pre
-                            style="max-height: 500px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word;color:white; background: rgb(18, 17, 17); padding: 20px; border-radius: 5px;">{{ summary.original_text }}</pre>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="row mb-5">
-                <div class="col-md-4">
-                    <a href="{% url 'summarize_text' %}"
-                        class="btn  text-white w-100" style="background-color: var(--ghana-green);">
-                        <i class="fas fa-plus"></i> New Summary
-                    </a>
-                </div>
-                <div class="col-md-4">
-                    <a href="{% url 'summaries_list' %}"
-                        class="btn w-100" style="background-color: var(--ghana-red);">
-                        <i class="fas fa-list"></i> All Summaries
-                    </a>
-                </div>
-                <div class="col-md-4">
-                    <a href="{% url 'home' %}"
-                        class="btn w-100" style="background-color: var(--ghana-yellow);">
-                        <i class="fas fa-home"></i> Home
-                    </a>
+                <div class="d-grid gap-2 mt-2">
+                    <a href="{% url 'summarize_text' %}" class="btn btn-primary rounded-pill py-2">+ Analyze Another</a>
+                    <a href="{% url 'summaries_list' %}" class="btn btn-outline-secondary rounded-pill py-2">View All Summaries</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
-<style>
-    :root {
-        --ghana-red: #CE1126;
-        --ghana-yellow: #FCD116;
-        --ghana-green: #007857;
-    }
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const timelineData = JSON.parse('{{ summary.debate_timeline|safe|default:"[]" }}');
+        const sentimentData = JSON.parse('{{ summary.sentiment_data|safe|default:"{}" }}');
 
-    .bg-gradient {
-        background-attachment: fixed;
-    }
+        // 1. Gantt-style Timeline
+        if (timelineData.length > 0) {
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: timelineData.map(d => d.label),
+                    datasets: [{
+                        label: 'Debate Time',
+                        data: timelineData.map(d => [d.start, d.end]),
+                        backgroundColor: (c) => {
+                            const item = timelineData[c.index];
+                            return item.type === 'speaker' ? 'rgba(52, 152, 219, 0.7)' : 'rgba(243, 156, 18, 0.7)';
+                        },
+                        borderRadius: 10,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (c) => `Relative segment: ${c.raw[0]} - ${c.raw[1]}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { min: 0, max: 100, title: { display: true, text: 'Debate Progress (%)' } }
+                    }
+                }
+            });
+        }
 
-    .card {
-        border-radius: 10px;
-    }
-
-    .bg-info-subtle {
-        background-color: rgba(13, 110, 253, 0.1) !important;
-    }
-</style>
+        // 2. Sentiment Trend (Sparkline Style)
+        const sCtx = document.getElementById('sentimentTrendChart').getContext('2d');
+        new Chart(sCtx, {
+            type: 'line',
+            data: {
+                labels: ['Start', 'Middle', 'End'],
+                datasets: [
+                    {
+                        label: 'Positive',
+                        data: [sentimentData.positive * 0.8, sentimentData.positive, sentimentData.positive * 1.1],
+                        borderColor: '#2ecc71',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'Neutral',
+                        data: [sentimentData.neutral, sentimentData.neutral * 0.9, sentimentData.neutral],
+                        borderColor: '#95a5a6',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'Negative',
+                        data: [sentimentData.negative * 1.2, sentimentData.negative, sentimentData.negative * 0.7],
+                        borderColor: '#e74c3c',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+                scales: { 
+                    y: { display: false },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

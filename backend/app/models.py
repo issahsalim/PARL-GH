@@ -95,6 +95,12 @@ class Summary(models.Model):
     motions = models.JSONField(default=list, blank=True, help_text="List of motions discussed")
     outcomes = models.JSONField(default=list, blank=True, help_text="List of outcomes/decisions")
     
+    # Advanced analytics data
+    sentiment_data = models.JSONField(default=dict, blank=True, help_text="Sentiment analysis scores")
+    action_items = models.JSONField(default=list, blank=True, help_text="List of identified action items")
+    speaker_stats = models.JSONField(default=dict, blank=True, help_text="Word count and time distribution")
+    debate_timeline = models.JSONField(default=list, blank=True, help_text="Sequence of events for visualization")
+    
     # Metadata
     original_word_count = models.IntegerField()
     summary_word_count = models.IntegerField()

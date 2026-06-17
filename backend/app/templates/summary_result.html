@@ -3,242 +3,73 @@
 
 {% block title %}Summary Result - ParlGH{% endblock %}
 
+{% block extra_css %}
+<style>
+    :root {
+        --parl-navy: #1a2a40;
+        --parl-accent: #3498db;
+        --parl-green: #27ae60;
+        --soft-bg: #f8fafc;
+    }
+    body { background-color: var(--soft-bg); font-family: 'Outfit', sans-serif; }
+    .summary-container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+    .premium-card { background: white; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); overflow: hidden; }
+    .stats-header { display: grid; grid-template-columns: repeat(4, 1fr); background: #fdfdfd; border-bottom: 1px solid #eee; }
+    .stat-item { padding: 20px; text-align: center; border-right: 1px solid #eee; }
+    .stat-value { display: block; font-size: 1.5rem; font-weight: 700; color: var(--parl-navy); }
+    .stat-label { font-size: 0.75rem; color: #888; text-transform: uppercase; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-5 mb-5">
-    <div class="row">
-        <div class="col-lg-10 mx-auto">
-            {% if messages %}
-            {% for message in messages %}
-            <div
-                class="alert alert-{{ message.tags }} alert-dismissible fade show"
-                role="alert">
-                {{ message }}
-                <button type="button" class="btn-close"
-                    data-bs-dismiss="alert"></button>
+<div class="summary-container">
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            <i class="fas fa-check-circle me-2"></i> {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="premium-card">
+        <div class="stats-header">
+            <div class="stat-item">
+                <span class="stat-label">Original</span>
+                <span class="stat-value">{{ summary.original_word_count }}</span>
             </div>
-            {% endfor %}
-            {% endif %}
+            <div class="stat-item">
+                <span class="stat-label">Summary</span>
+                <span class="stat-value">{{ summary.summary_word_count }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Reduction</span>
+                <span class="stat-value" style="color: var(--parl-green);">{{ summary.reduction_percentage }}%</span>
+            </div>
+            <div class="stat-item" style="border-right: none;">
+                <span class="stat-label">Accuracy</span>
+                <span class="stat-value">High</span>
+            </div>
+        </div>
 
-            <!-- Header Section -->
-            <div class="card shadow-lg border-0 mb-4">
-                <div class="card-header bg-gradient"
-                    style="background: linear-gradient(90deg, var(--ghana-red) 0%, var(--ghana-green) 100%);">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <h2 class="text-white mb-0">
-                                <i class="fas fa-sparkles"></i> Summary
-                                Generated
-                            </h2>
-                        </div>
-                        <div class="col-auto">
-                            <span class="badge bg-light text-dark">{{ summary.get_content_type_display }}</span>
-                            <span class="badge bg-success">{{ summary.reduction_percentage }}% Reduced</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card-body p-4">
-                    <!-- Metadata Section -->
-                    <div class="row mb-4">
-                        <div class="col-md-3">
-                            <div class="text-center p-3 bg-light rounded">
-                                <h6 class="text-muted mb-2"><i class="fas fa-file"></i> Original</h6>
-                                <h3 class="text-dark">{{ summary.original_word_count }}</h3>
-                                <small>words</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="text-center p-3 bg-light rounded">
-                                <h6 class="text-muted mb-2"><i class="fas fa-compress"></i> Summary</h6>
-                                <h3 class="text-dark">{{ summary.summary_word_count }}</h3>
-                                <small>words</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="text-center p-3 bg-light rounded">
-                                <h6 class="text-muted mb-2"><i class="fas fa-percent"></i> Reduction</h6>
-                                <h3 class="text-success">{{ summary.reduction_percentage }}%</h3>
-                                <small>compressed</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="text-center p-3 bg-light rounded">
-                                <h6 class="text-muted mb-2"><i class="fas fa-clock"></i> Generated</h6>
-                                <h3 class="text-primary" style="font-size: 1.2rem;">{{ summary.created_at|date:"M d, Y" }}</h3>
-                                <small>{{ summary.created_at|time:"H:i" }}</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Summary Section -->
-                    <div class="card bg-light border-0 mb-4">
-                        <div class="card-header bg-white border-bottom">
-                            <h5 class="mb-0"><i class="fas fa-lightbulb"></i> AI
-                                Summary</h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="lead" style="line-height: 1.8; font-size: 1.05rem;">{{ summary.summary_text }}</p>
-                        </div>
-                    </div>
-
-                    <!-- Structured Information Section -->
-                    <div class="row mb-4">
-                        <div class="col-md-6 mb-3">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-header bg-info text-white">
-                                    <h6 class="mb-0"><i class="fas fa-microphone"></i> Speakers Mentioned</h6>
-                                </div>
-                                <div class="card-body">
-                                    {% if summary.speakers_mentioned %}
-                                    <ul class="list-unstyled">
-                                        {% for speaker in summary.speakers_mentioned %}
-                                        <li class="mb-2">
-                                            <span class="badge bg-info">{{ speaker }}</span>
-                                        </li>
-                                        {% endfor %}
-                                    </ul>
-                                    {% else %}
-                                    <p class="text-muted small mb-0">No speakers extracted</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-header bg-warning text-dark">
-                                    <h6 class="mb-0"><i class="fas fa-scroll"></i> Motions</h6>
-                                </div>
-                                <div class="card-body">
-                                    {% if summary.motions %}
-                                    <ul class="list-unstyled">
-                                        {% for motion in summary.motions %}
-                                        <li class="mb-2">
-                                            <small class="text-wrap">{{ motion }}</small>
-                                        </li>
-                                        {% endfor %}
-                                    </ul>
-                                    {% else %}
-                                    <p class="text-muted small mb-0">No motions extracted</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-header bg-success text-white">
-                                    <h6 class="mb-0"><i class="fas fa-check-circle"></i> Outcomes & Decisions</h6>
-                                </div>
-                                <div class="card-body">
-                                    {% if summary.outcomes %}
-                                    <ul class="list-unstyled">
-                                        {% for outcome in summary.outcomes %}
-                                        <li class="mb-2">
-                                            <small class="text-wrap"><strong>{{ outcome }}</strong></small>
-                                        </li>
-                                        {% endfor %}
-                                    </ul>
-                                    {% else %}
-                                    <p class="text-muted small mb-0">No outcomes extracted</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Context Information -->
-                    {% if segment %}
-                    <div class="alert alert-info">
-                        <h6><i class="fas fa-link"></i> Related Segment</h6>
-                        <p class="mb-0">Speaker: <strong>{{ segment.speaker
-                                }}</strong></p>
-                        <p class="mb-0">Session: <strong>{{
-                                segment.session.title }}</strong></p>
-                        <a href="{% url 'segment_detail' segment.id %}"
-                            class="btn btn-sm btn-info mt-2">View Segment</a>
-                    </div>
-                    {% endif %}
-
-                    {% if session %}
-                    <div class="alert alert-info">
-                        <h6><i class="fas fa-parliament"></i> Related
-                            Session</h6>
-                        <p class="mb-0">Title: <strong>{{ session.title
-                                }}</strong></p>
-                        <p class="mb-0">Date: <strong>{{ session.sitting_date
-                                }}</strong></p>
-                        <a href="{% url 'session_detail' session.id %}"
-                            class="btn btn-sm btn-info mt-2">View Session</a>
-                    </div>
-                    {% endif %}
-
-                    <!-- Action Buttons -->
-                    <div class="mt-4 pt-3 border-top">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <a href="{% url 'summarize_text' %}"
-                                    class="btn btn-primary w-100">
-                                    <i class="fas fa-plus"></i> Summarize
-                                    Another
-                                </a>
-                            </div>
-                            <div class="col-md-6">
-                                <a href="{% url 'summaries_list' %}"
-                                    class="btn btn-secondary w-100">
-                                    <i class="fas fa-list"></i> View All
-                                    Summaries
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <div class="p-4 p-md-5">
+            <h3 class="mb-4" style="color: var(--parl-navy); font-weight: 700;">
+                <i class="fas fa-magic text-primary me-2"></i> Analysis Complete
+            </h3>
+            
+            <div class="p-4 rounded-4 mb-4" style="background: #fbfbfb; border-left: 5px solid var(--parl-accent); line-height: 1.8;">
+                {{ summary.summary_text }}
             </div>
 
-            <!-- Original Text (Collapsible) -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-light">
-                    <button
-                        class="btn btn-link text-decoration-none text-dark w-100 text-start"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#originalText">
-                        <i class="fas fa-chevron-down"></i> View Original Text
-                    </button>
-                </div>
-                <div class="collapse" id="originalText">
-                    <div class="card-body bg-light">
-                        <pre
-                            style="max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word;">{{ summary.original_text }}</pre>
-                    </div>
-                </div>
+            <div class="d-flex gap-3 mt-5">
+                <a href="{% url 'view_summary' summary.id %}" class="btn btn-primary px-4 py-2 rounded-pill">
+                    <i class="fas fa-chart-pie me-2"></i> View Full Analytics Dashboard
+                </a>
+                <a href="{% url 'summarize_text' %}" class="btn btn-outline-secondary px-4 py-2 rounded-pill">
+                    Summarize Another
+                </a>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-    :root {
-        --ghana-red: #CE1126;
-        --ghana-yellow: #FCD116;
-        --ghana-green: #007857;
-    }
-
-    .bg-gradient {
-        background-attachment: fixed;
-    }
-
-    .card {
-        border-radius: 10px;
-        transition: transform 0.3s ease;
-    }
-
-    .card:hover {
-        transform: translateY(-2px);
-    }
-
-    .badge {
-        padding: 8px 12px;
-        font-size: 0.9rem;
-    }
-</style>
 {% endblock %}

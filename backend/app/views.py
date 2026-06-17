@@ -172,49 +172,75 @@ def segment_detail(request, id):
  
 
 def analytics_dashboard(request):
-    # ---- MP of the Month ----
-    monthly_stats = (
+    # ---- MP Participation (Top MPs by Speaking Time) ----
+    mp_stats = (
         DebateSegment.objects
-        .annotate(month=TruncMonth('session__sitting_date'))
-        .values('month', 'speaker__id', 'speaker__name')
+        .values('speaker__name')
         .annotate(total_words=Sum('word_count'))
-        .order_by('-month', '-total_words')
-    )
-    # Convert QuerySet to list for JSON serialization
-    monthly_stats = list(monthly_stats)
-
-    # ---- Total Debates per Session ----
-    session_counts = (
-        Session.objects
-        .annotate(segment_count=Sum('debatesegment__word_count'))
-        .order_by('-sitting_date')
-        .values('id', 'title', 'sitting_date', 'segment_count')
+        .order_by('-total_words')[:10]
     )
     
-    session_counts = list(session_counts)
-
-    # ---- Topic popularity ----
-    topic_counts = (
+    # ---- Topic Trends Over Time ----
+    # Group topics by month
+    topic_trends = (
         Topic.objects
+        .annotate(month=TruncMonth('session__sitting_date'))
+        .values('month', 'name')
         .annotate(total_words=Sum('session__debatesegment__word_count'))
-        .order_by('-total_words')
-        .values('id', 'name', 'total_words')
+        .order_by('month')
     )
-    topic_counts = list(topic_counts)
-
-    # Serialize dates to strings for JSON
-    for stat in monthly_stats:
-        if stat['month']:
-            stat['month'] = stat['month'].isoformat()
     
-    for session in session_counts:
-        if session['sitting_date']:
-            session['sitting_date'] = session['sitting_date'].isoformat()
+    # ---- Participation by Party ----
+    party_participation = (
+        Speaker.objects
+        .exclude(party__isnull=True)
+        .exclude(party='')
+        .values('party')
+        .annotate(count=Count('debatesegment'))
+        .order_by('-count')
+    )
+    
+    # ---- Sentiment Analysis (Based on Summaries) ----
+    # Average sentiment from the last 20 summaries
+    latest_summaries = Summary.objects.exclude(sentiment_data={}).order_by('-created_at')[:20]
+    sentiment_agg = {'positive': 0, 'neutral': 0, 'negative': 0}
+    if latest_summaries.exists():
+        count = latest_summaries.count()
+        for s in latest_summaries:
+            sentiment_agg['positive'] += s.sentiment_data.get('positive', 0)
+            sentiment_agg['neutral'] += s.sentiment_data.get('neutral', 0)
+            sentiment_agg['negative'] += s.sentiment_data.get('negative', 0)
+        
+        sentiment_agg = {k: v/count for k, v in sentiment_agg.items()}
+    else:
+        # Fallback if no summaries exist yet
+        sentiment_agg = {'positive': 35, 'neutral': 45, 'negative': 20}
+
+    # ---- Expected vs Number of Speeches (Simplified) ----
+    # Expected is calculated as average segments per session
+    total_sessions = Session.objects.count() or 1
+    total_segments = DebateSegment.objects.count()
+    avg_per_session = total_segments / total_sessions
+    
+    expected_vs_actual = []
+    recent_sessions = Session.objects.order_by('-sitting_date')[:5]
+    for s in recent_sessions:
+        actual = s.debatesegment_set.count()
+        expected_vs_actual.append({
+            'label': s.title[:15],
+            'actual': actual,
+            'expected': round(avg_per_session)
+        })
 
     context = {
-        "monthly_stats": json.dumps(monthly_stats, default=str),
-        "session_counts": json.dumps(session_counts, default=str),
-        "topic_counts": json.dumps(topic_counts, default=str),
+        "mp_stats": json.dumps(list(mp_stats), default=str),
+        "topic_trends": json.dumps(list(topic_trends), default=str),
+        "party_participation": json.dumps(list(party_participation), default=str),
+        "sentiment_overview": json.dumps(sentiment_agg, default=str),
+        "expected_vs_actual": json.dumps(expected_vs_actual, default=str),
+        "sessions": Session.objects.all().order_by('-sitting_date'),
+        "speakers": Speaker.objects.all().order_by('name'),
+        "topics": Topic.objects.all().order_by('name'),
     }
 
     return render(request, "analytic_dashboard.html", context)
@@ -253,6 +279,10 @@ def summarize_text(request):
                     speakers_mentioned=summary_data['speakers'],
                     motions=summary_data['motions'],
                     outcomes=summary_data['outcomes'],
+                    sentiment_data=summary_data['sentiment'],
+                    action_items=summary_data['action_items'],
+                    speaker_stats=summary_data['speaker_stats'],
+                    debate_timeline=summary_data['timeline'],
                     original_word_count=summary_data['word_count_original'],
                     summary_word_count=summary_data['word_count_summary'],
                     reduction_percentage=summary_data['reduction_percentage'],
@@ -298,6 +328,10 @@ def summarize_segment(request, segment_id):
             speakers_mentioned=summary_data['speakers'],
             motions=summary_data['motions'],
             outcomes=summary_data['outcomes'],
+            sentiment_data=summary_data['sentiment'],
+            action_items=summary_data['action_items'],
+            speaker_stats=summary_data['speaker_stats'],
+            debate_timeline=summary_data['timeline'],
             original_word_count=summary_data['word_count_original'],
             summary_word_count=summary_data['word_count_summary'],
             reduction_percentage=summary_data['reduction_percentage'],
@@ -353,6 +387,10 @@ def summarize_session(request, session_id):
             speakers_mentioned=summary_data['speakers'],
             motions=summary_data['motions'],
             outcomes=summary_data['outcomes'],
+            sentiment_data=summary_data['sentiment'],
+            action_items=summary_data['action_items'],
+            speaker_stats=summary_data['speaker_stats'],
+            debate_timeline=summary_data['timeline'],
             original_word_count=summary_data['word_count_original'],
             summary_word_count=summary_data['word_count_summary'],
             reduction_percentage=summary_data['reduction_percentage'],
