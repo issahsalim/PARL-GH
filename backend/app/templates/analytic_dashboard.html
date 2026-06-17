@@ -177,41 +177,44 @@
         <!-- Sidebar Filters -->
         <div class="filter-card">
             <h3>Quick Filters</h3>
-            <div class="filter-group">
-                <label>Debate Session</label>
-                <select id="sessionFilter">
-                    <option value="">All Sessions</option>
-                    {% for s in sessions %}
-                    <option value="{{ s.id }}">{{ s.title }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Member of Parliament</label>
-                <select id="mpFilter">
-                    <option value="">All MPs</option>
-                    {% for sp in speakers %}
-                    <option value="{{ sp.id }}">{{ sp.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Political Party</label>
-                <select id="partyFilter">
-                    <option value="">All Parties</option>
-                    <option value="NPP">NPP</option>
-                    <option value="NDC">NDC</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Range</label>
-                <select id="dateFilter">
-                    <option value="last12">Last 12 Months</option>
-                    <option value="ytd">Year to Date</option>
-                    <option value="all">All Time</option>
-                </select>
-            </div>
-            <button class="btn btn-primary w-100 mt-2">Apply Filters</button>
+            <form method="GET" action="{% url 'analytics_dashboard' %}">
+                <div class="filter-group">
+                    <label>Debate Session</label>
+                    <select name="session" id="sessionFilter">
+                        <option value="">All Sessions</option>
+                        {% for s in sessions %}
+                        <option value="{{ s.id }}" {% if s.id|stringformat:"s" == selected_filters.session %}selected{% endif %}>{{ s.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Member of Parliament</label>
+                    <select name="mp" id="mpFilter">
+                        <option value="">All MPs</option>
+                        {% for sp in speakers %}
+                        <option value="{{ sp.id }}" {% if sp.id|stringformat:"s" == selected_filters.mp %}selected{% endif %}>{{ sp.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Political Party</label>
+                    <select name="party" id="partyFilter">
+                        <option value="">All Parties</option>
+                        <option value="NPP" {% if selected_filters.party == 'NPP' %}selected{% endif %}>NPP</option>
+                        <option value="NDC" {% if selected_filters.party == 'NDC' %}selected{% endif %}>NDC</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Range</label>
+                    <select name="date_range" id="dateFilter">
+                        <option value="all" {% if selected_filters.date_range == 'all' %}selected{% endif %}>All Time</option>
+                        <option value="last12" {% if selected_filters.date_range == 'last12' %}selected{% endif %}>Last 12 Months</option>
+                        <option value="ytd" {% if selected_filters.date_range == 'ytd' %}selected{% endif %}>Year to Date</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 mt-2">Apply Filters</button>
+                <a href="{% url 'analytics_dashboard' %}" class="btn btn-link w-100 mt-1 small text-decoration-none" style="color: #666; font-size: 0.8rem;">Reset All</a>
+            </form>
         </div>
     </div>
 </div>

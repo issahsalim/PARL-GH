@@ -7,6 +7,7 @@ from django.db.models import Sum, Count
 from django.db.models.functions import TruncMonth
 from django.shortcuts import render
 from django.utils import timezone
+from datetime import timedelta
 from django.shortcuts import render
 from django.db.models import Q
 import re
@@ -172,18 +173,51 @@ def segment_detail(request, id):
  
 
 def analytics_dashboard(request):
-    # ---- MP Participation (Top MPs by Speaking Time) ----
+    # Get Filter Parameters
+    session_id = request.GET.get('session')
+    mp_id = request.GET.get('mp')
+    party = request.GET.get('party')
+    date_filter = request.GET.get('date_range', 'all')
+
+    # Base Querysets
+    segments = DebateSegment.objects.all()
+    topics = Topic.objects.all()
+    sessions_qs = Session.objects.all()
+    
+    # Apply Filters
+    if session_id:
+        segments = segments.filter(session_id=session_id)
+        topics = topics.filter(session_id=session_id)
+        sessions_qs = sessions_qs.filter(id=session_id)
+    
+    if mp_id:
+        segments = segments.filter(speaker_id=mp_id)
+    
+    if party:
+        segments = segments.filter(speaker__party=party)
+        
+    if date_filter == 'last12':
+        one_year_ago = timezone.now() - timedelta(days=365)
+        segments = segments.filter(session__sitting_date__gte=one_year_ago)
+        topics = topics.filter(session__sitting_date__gte=one_year_ago)
+        sessions_qs = sessions_qs.filter(sitting_date__gte=one_year_ago)
+    elif date_filter == 'ytd':
+        start_of_year = timezone.now().replace(month=1, day=1)
+        segments = segments.filter(session__sitting_date__gte=start_of_year)
+        topics = topics.filter(session__sitting_date__gte=start_of_year)
+        sessions_qs = sessions_qs.filter(sitting_date__gte=start_of_year)
+
+    # ---- MP Participation ----
     mp_stats = (
-        DebateSegment.objects
+        segments
         .values('speaker__name')
         .annotate(total_words=Sum('word_count'))
         .order_by('-total_words')[:10]
     )
     
-    # ---- Topic Trends Over Time ----
-    # Group topics by month
+    # ---- Topic Trends ----
     topic_trends = (
-        Topic.objects
+        topics
         .annotate(month=TruncMonth('session__sitting_date'))
         .values('month', 'name')
         .annotate(total_words=Sum('session__debatesegment__word_count'))
@@ -197,12 +231,19 @@ def analytics_dashboard(request):
         .exclude(party='')
         .values('party')
         .annotate(count=Count('debatesegment'))
-        .order_by('-count')
     )
+    if party:
+        party_participation = party_participation.filter(party=party)
     
-    # ---- Sentiment Analysis (Based on Summaries) ----
-    # Average sentiment from the last 20 summaries
-    latest_summaries = Summary.objects.exclude(sentiment_data={}).order_by('-created_at')[:20]
+    party_participation = party_participation.order_by('-count')
+    
+    # ---- Sentiment Analysis ----
+    latest_summaries = Summary.objects.exclude(sentiment_data={}).order_by('-created_at')
+    if session_id:
+        latest_summaries = latest_summaries.filter(session_id=session_id)
+    
+    latest_summaries = latest_summaries[:20]
+    
     sentiment_agg = {'positive': 0, 'neutral': 0, 'negative': 0}
     if latest_summaries.exists():
         count = latest_summaries.count()
@@ -213,36 +254,39 @@ def analytics_dashboard(request):
         
         sentiment_agg = {k: v/count for k, v in sentiment_agg.items()}
     else:
-        # Fallback if no summaries exist yet
         sentiment_agg = {'positive': 35, 'neutral': 45, 'negative': 20}
 
-    # ---- Expected vs Number of Speeches (Simplified) ----
-    # Expected is calculated as average segments per session
+    # ---- Expected vs Actual ----
     total_sessions = Session.objects.count() or 1
     total_segments = DebateSegment.objects.count()
-    avg_per_session = total_segments / total_sessions
+    overall_avg = total_segments / total_sessions
     
     expected_vs_actual = []
-    recent_sessions = Session.objects.order_by('-sitting_date')[:5]
+    recent_sessions = sessions_qs.order_by('-sitting_date')[:5]
     for s in recent_sessions:
-        actual = s.debatesegment_set.count()
+        actual = segments.filter(session=s).count()
         expected_vs_actual.append({
             'label': s.title[:15],
             'actual': actual,
-            'expected': round(avg_per_session)
+            'expected': int(overall_avg)
         })
-
+    
+    from django.core.serializers.json import DjangoJSONEncoder
     context = {
-        "mp_stats": json.dumps(list(mp_stats), default=str),
-        "topic_trends": json.dumps(list(topic_trends), default=str),
-        "party_participation": json.dumps(list(party_participation), default=str),
-        "sentiment_overview": json.dumps(sentiment_agg, default=str),
-        "expected_vs_actual": json.dumps(expected_vs_actual, default=str),
-        "sessions": Session.objects.all().order_by('-sitting_date'),
+        "mp_stats": json.dumps(list(mp_stats), cls=DjangoJSONEncoder),
+        "topic_trends": json.dumps(list(topic_trends), cls=DjangoJSONEncoder),
+        "party_participation": json.dumps(list(party_participation), cls=DjangoJSONEncoder),
+        "sentiment_overview": json.dumps(sentiment_agg),
+        "expected_vs_actual": json.dumps(expected_vs_actual),
+        "sessions": Session.objects.all().order_by('-sitting_date')[:50],
         "speakers": Speaker.objects.all().order_by('name'),
-        "topics": Topic.objects.all().order_by('name'),
+        "selected_filters": {
+            "session": session_id,
+            "mp": mp_id,
+            "party": party,
+            "date_range": date_filter
+        }
     }
-
     return render(request, "analytic_dashboard.html", context)
 
 
