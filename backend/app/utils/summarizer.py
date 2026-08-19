@@ -134,27 +134,30 @@ class HansardSummarizer:
         """Extract tasks and follow-ups"""
         actions = []
         patterns = [
-            r'(?:will|must|should|agreed to)\s+(?:submit|meet|investigate|report|review|organize|create|form)\s+([^.!?\n]+[.!?])',
-            r'(?:deadline|by the end of|no later than)\s+([^.!?\n]+[.!?])',
-            r'(?:Committee|Task Force)\s+(?:to|will)\s+([^.!?\n]+[.!?])'
+            r'(?:will|must|should|agreed to|ordered to|requested to|directed to)\s+(?:submit|meet|investigate|report|review|organize|create|form|provide|implement)\s+([^.!?\n]+[.!?])',
+            r'(?:deadline|by the end of|no later than|within)\s+([^.!?\n]+[.!?])',
+            r'(?:Committee|Task Force|Ministry|Department)\s+(?:to|will|requested to)\s+([^.!?\n]+[.!?])'
         ]
         for pattern in patterns:
             for match in re.finditer(pattern, text, re.IGNORECASE):
                 action = match.group(1).strip()
-                if 10 < len(action) < 200:
+                if 10 < len(action) < 250:
                     actions.append(action)
-        return list(set(actions))[:5]
+        return list(set(actions))[:8]
 
     def _calculate_speaker_stats(self, text: str, speakers: List[str]) -> Dict[str, Any]:
         """Calculate word count distribution per speaker"""
         stats = {}
         total_words = len(text.split())
+        if not speakers or total_words == 0:
+            return {}
         
         # This is a simplification: split text by speaker names to estimate their portions
-        for speaker in speakers:
-            # Look for appearances of this speaker and count words until next speaker
-            pattern = re.escape(speaker) + r'\s*:(.*?)(?=' + '|'.join([re.escape(s) for s in speakers if s != speaker]) + r'|$)'
-            fragments = re.findall(pattern, text, re.DOTALL)
+        sorted_speakers = sorted(list(set(speakers)), key=len, reverse=True)
+        for speaker in sorted_speakers:
+            # Look for matches with more flexible colon placement
+            pattern = re.escape(speaker) + r'\s*[:\-—]*(.*?)(?=' + '|'.join([re.escape(s) for s in sorted_speakers if s != speaker]) + r'|$)'
+            fragments = re.findall(pattern, text, re.DOTALL | re.IGNORECASE)
             words = sum(len(f.split()) for f in fragments)
             if words > 0:
                 stats[speaker] = {
@@ -166,22 +169,19 @@ class HansardSummarizer:
     def _generate_timeline(self, text: str, speakers: List[str], motions: List[str]) -> List[Dict[str, Any]]:
         """Generate sequential events for the Gantt chart"""
         timeline = []
-        # Find positions of speakers and motions to create a sequence
         events = []
+        text_lower = text.lower()
+        
         for speaker in set(speakers):
-            for m in re.finditer(re.escape(speaker) + r'\s*:', text):
+            for m in re.finditer(re.escape(speaker.lower()) + r'\s*[:\-—]', text_lower):
                 events.append({'type': 'speaker', 'label': speaker, 'pos': m.start()})
         
         for motion in motions:
-            # Just take a snippet of the motion for the label
             label = (motion[:30] + '...') if len(motion) > 30 else motion
-            for m in re.finditer(re.escape(motion), text):
+            for m in re.finditer(re.escape(motion.lower()), text_lower):
                 events.append({'type': 'motion', 'label': label, 'pos': m.start()})
                 
-        # Sort by position
         events.sort(key=lambda x: x['pos'])
-        
-        # Convert to relative time/offset for the chart
         text_len = len(text)
         for i, event in enumerate(events):
             start_offset = round((event['pos'] / text_len) * 100)
@@ -191,103 +191,77 @@ class HansardSummarizer:
                 'type': event['type'],
                 'label': event['label'],
                 'start': start_offset,
-                'end': end_offset if end_offset > start_offset else start_offset + 5
+                'end': max(start_offset + 2, end_offset) # Ensure a small visible block
             })
             
-        return timeline[:15] # Limit for display
-    
-    @staticmethod
-    def _chunk_text(text: str, max_chunk_length: int = 1000) -> List[str]:
-        """Split text into chunks based on sentence boundaries"""
-        sentences = re.split(r'(?<=[.!?])\s+', text)
-        chunks = []
-        current_chunk = []
-        current_length = 0
-        
-        for sentence in sentences:
-            sentence_length = len(sentence.split())
-            
-            if current_length + sentence_length > max_chunk_length and current_chunk:
-                chunks.append(" ".join(current_chunk))
-                current_chunk = [sentence]
-                current_length = sentence_length
-            else:
-                current_chunk.append(sentence)
-                current_length += sentence_length
-        
-        if current_chunk:
-            chunks.append(" ".join(current_chunk))
-        
-        return chunks
-    
+        return timeline[:20]
+
     @staticmethod
     def _extract_speakers(text: str) -> List[str]:
-        """
-        Extract speaker names from debate text.
-        Looks for patterns like "Mr. Speaker:", "Ms. Osei:", etc.
-        """
+        """Extract speaker names from debate text."""
         speakers = []
         
-        # Pattern 1: "Mr./Ms./Hon. [Name]:" at start of line
-        pattern1 = r'(?:^|\n)((?:Mr|Ms|Mrs|Hon|Dr|Prof|Sir|Madam)\.\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*):.*?(?=(?:(?:Mr|Ms|Mrs|Hon|Dr|Prof|Sir|Madam)\.|$))'
-        
+        # 1. Regex patterns (Standard formats)
+        # Prefix format: Hon. Member, Mr. Speaker, etc.
+        pattern1 = r'(?:^|\n)((?:Mr|Ms|Mrs|Hon|Dr|Prof|Sir|Madam|The|Speaker|Chair)\.?\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*[:\-—]'
         for match in re.finditer(pattern1, text, re.MULTILINE):
-            speaker = match.group(1).strip()
-            if speaker and len(speaker) < 100:  # Reasonable length check
-                speakers.append(speaker)
+            speakers.append(match.group(1).strip())
         
-        # Pattern 2: All caps at start of line (common in hansards)
-        pattern2 = r'(?:^|\n)([A-Z]{2,}(?:\s+[A-Z]{2,})*)\s*:'
+        # All caps format
+        pattern2 = r'(?:^|\n)([A-Z]{2,}(?:\s+[A-Z]{2,})*)\s*[:\-—]'
         for match in re.finditer(pattern2, text, re.MULTILINE):
             name = match.group(1).strip()
-            if len(name) > 3 and len(name) < 60:
+            if 3 < len(name) < 50:
                 speakers.append(name)
+
+        # 2. GHANA SPECIFIC: THE SPEAKER detection (often without colons in text)
+        if "THE SPEAKER" in text.upper() or "MR. SPEAKER" in text.upper():
+            speakers.append("THE SPEAKER")
+
+        # 3. KNOWN DATABASE SPEAKERS: 
+        # If we have few speakers found, let's search for common Ghanaian MP names that exist in our database
+        try:
+            from ..models import Speaker
+            # Get a subset of speakers who have many segments (active ones)
+            known_speakers = Speaker.objects.exclude(name="").values_list('name', flat=True)
+            for name in known_speakers:
+                if name.upper() in text.upper():
+                    # We might want to verify it's not just a mention, but let's be inclusive
+                    speakers.append(name)
+        except Exception as e:
+            logger.debug(f"Could not load known speakers from DB: {e}")
         
-        return speakers
+        return list(set(speakers))
     
     @staticmethod
     def _extract_motions(text: str) -> List[str]:
-        """
-        Extract motions from debate text.
-        Looks for patterns like "Motion to...", "moved that...", etc.
-        """
+        """Extract motions from debate text."""
         motions = []
-        
         patterns = [
-            r'(?:Motion to|moved that|I move that)\s+([^.!?\n]+[.!?])',
-            r'(?:BE IT ENACTED|BE IT RESOLVED)\s+([^.!?\n]+[.!?])',
-            r'(?:The motion is|This motion)\s+([^.!?\n]+[.!?])',
+            r'(?:Motion|Resolution)\s+(?:to|relative to|regarding)\s+([^.!?\n]+[.!?])',
+            r'(?:I move that|Moved that|Therefore move)\s+([^.!?\n]+[.!?])',
+            r'(?:BE IT RESOLVED|COMMITTED TO|PURSUANT TO)\s+([^.!?\n]+[.!?])',
+            r'(?:Matter regarding|Subject of)\s+([^.!?\n]+[.!?])',
         ]
-        
         for pattern in patterns:
             for match in re.finditer(pattern, text, re.IGNORECASE):
-                motion = match.group(1).strip()
-                if motion and 20 < len(motion) < 500:
-                    motions.append(motion)
-        
-        return motions
+                motions.append(match.group(1).strip())
+        return list(set(motions))
     
     @staticmethod
     def _extract_outcomes(text: str) -> List[str]:
-        """
-        Extract outcomes/decisions from debate text.
-        Looks for patterns like "agreed to", "rejected", "passed", etc.
-        """
+        """Extract outcomes from debate text."""
         outcomes = []
-        
         patterns = [
-            r'(?:The motion is|Motion was)\s+(?:unanimously\s+)?(passed|rejected|withdrawn|modified|amended|agreed to|carried)',
-            r'(?:approved|adopted|accepted|dismissed|defeated|lost)\s+by?\s+(?:the|a)?\s+(?:House|Parliament)',
-            r'(?:Ayes|Noes)\s+\d+.*?(?:Ayes|Noes)\s+\d+',
+            r'(?:Motion|Resolution|Bill)\s+(?:was|is|has been)\s+(passed|rejected|carried|withdrawn|tabled|deferred|accepted|agreed to)',
+            r'(?:The House|Parliament|Speaker)\s+(?:agreed to|resolved|ordered|passed|ruled|directs)\s+([^.!?\n]+[.!?])',
+            r'Question put and\s+(agreed to|negatived)',
+            r'(?:Stay of execution|Decision|Ruling)\s+(?:is|was|hereby)\s+([^.!?\n]+[.!?])',
         ]
-        
         for pattern in patterns:
             for match in re.finditer(pattern, text, re.IGNORECASE):
-                outcome = match.group(0).strip()
-                if outcome and len(outcome) < 300:
-                    outcomes.append(outcome)
-        
-        return outcomes
+                outcomes.append(match.group(0).strip())
+        return list(set(outcomes))
         
     @staticmethod
     def _fallback_summary(text: str, sentences_count: int = 5) -> str:

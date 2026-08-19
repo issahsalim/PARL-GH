@@ -14,6 +14,8 @@ urlpatterns = [
     path('summarize/segment/<int:segment_id>/', views.summarize_segment, name='summarize_segment'),
     path('summarize/session/<int:session_id>/', views.summarize_session, name='summarize_session'),
     path('summary/<int:summary_id>/', views.view_summary, name='view_summary'),
+    path('summary/<int:summary_id>/json/', views.export_summary_json, name='export_summary_json'),
+    path('summary/<int:summary_id>/csv/', views.export_summary_csv, name='export_summary_csv'),
     path('summaries/', views.summaries_list, name='summaries_list'),
     
     # API endpoints

@@ -13,10 +13,11 @@ from django.db.models import Q
 import re
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from .forms import TextSummaryForm, SegmentSummaryForm, SessionSummaryForm
 from .utils.summarizer import get_summarizer
 import logging
+import csv
 from django.template.loader import render_to_string
 from django.core import serializers
 import json
@@ -290,6 +291,46 @@ def analytics_dashboard(request):
     return render(request, "analytic_dashboard.html", context)
 
 
+def export_summary_json(request, summary_id):
+    summary = get_object_or_404(Summary, id=summary_id)
+    data = {
+        "id": summary.id,
+        "type": summary.get_content_type_display(),
+        "date": summary.created_at.isoformat(),
+        "original_words": summary.original_word_count,
+        "summary_words": summary.summary_word_count,
+        "reduction": f"{summary.reduction_percentage}%",
+        "text": summary.summary_text,
+        "speakers": summary.speakers_mentioned,
+        "motions": summary.motions,
+        "outcomes": summary.outcomes,
+        "action_items": summary.action_items,
+        "sentiment": summary.sentiment_data
+    }
+    response = HttpResponse(json.dumps(data, indent=4), content_type="application/json")
+    response['Content-Disposition'] = f'attachment; filename="summary_{summary_id}.json"'
+    return response
+
+
+def export_summary_csv(request, summary_id):
+    summary = get_object_or_404(Summary, id=summary_id)
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="summary_{summary_id}.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Field', 'Value'])
+    writer.writerow(['ID', summary.id])
+    writer.writerow(['Type', summary.get_content_type_display()])
+    writer.writerow(['Date', summary.created_at])
+    writer.writerow(['Original Words', summary.original_word_count])
+    writer.writerow(['Summary Words', summary.summary_word_count])
+    writer.writerow(['Summary Text', summary.summary_text])
+    writer.writerow(['Speakers', ", ".join(summary.speakers_mentioned or [])])
+    writer.writerow(['Action Items', ", ".join(summary.action_items or [])])
+    
+    return response
+
+
 # ============ SUMMARIZATION VIEWS ============
 
 def summarize_text(request):
@@ -362,6 +403,23 @@ def summarize_segment(request, segment_id):
         # Generate structured summary
         summary_data = summarizer.summarize_with_structure(segment.text)
         
+        # --- ENRICHMENT WITH DB METADATA ---
+        # Add the known speaker if not identified
+        final_speakers = list(set(summary_data['speakers']))
+        if segment.speaker and segment.speaker.name not in final_speakers:
+            final_speakers.append(segment.speaker.name)
+            
+        # Add topics as fallback for motions
+        final_motions = list(set(summary_data['motions']))
+        if not final_motions:
+            db_topics = Topic.objects.filter(session=segment.session).values_list('name', flat=True)
+            final_motions = list(db_topics)[:3]
+            
+        # Refine speaker stats if empty
+        final_stats = summary_data['speaker_stats']
+        if not final_stats and segment.speaker:
+            final_stats = {segment.speaker.name: {'word_count': len(segment.text.split()), 'percentage': 100.0}}
+        
         # Save to database
         summary = Summary.objects.create(
             content_type='segment',
@@ -369,12 +427,12 @@ def summarize_segment(request, segment_id):
             session=segment.session,
             original_text=segment.text,
             summary_text=summary_data['summary'],
-            speakers_mentioned=summary_data['speakers'],
-            motions=summary_data['motions'],
+            speakers_mentioned=final_speakers,
+            motions=final_motions,
             outcomes=summary_data['outcomes'],
             sentiment_data=summary_data['sentiment'],
             action_items=summary_data['action_items'],
-            speaker_stats=summary_data['speaker_stats'],
+            speaker_stats=final_stats,
             debate_timeline=summary_data['timeline'],
             original_word_count=summary_data['word_count_original'],
             summary_word_count=summary_data['word_count_summary'],
@@ -422,18 +480,35 @@ def summarize_session(request, session_id):
         # Generate structured summary
         summary_data = summarizer.summarize_with_structure(combined_text)
         
+        # --- ENRICHMENT WITH DB METADATA ---
+        # Get all known speakers for this session
+        db_speakers = list(segments.values_list('speaker__name', flat=True).distinct())
+        final_speakers = list(set(summary_data['speakers'] + db_speakers))
+        
+        # Use DB Topics as fallback for motions
+        final_motions = list(set(summary_data['motions']))
+        if not final_motions:
+            db_topics = list(Topic.objects.filter(session=session).values_list('name', flat=True))
+            final_motions = db_topics[:5]
+            
+        # Recalculate stats using DB speakers if AI stats are weak
+        final_stats = summary_data['speaker_stats']
+        if len(final_stats) < 2 and len(final_speakers) > 1:
+            # Re-run stats calculation with full speaker list
+            final_stats = summarizer._calculate_speaker_stats(combined_text, final_speakers)
+        
         # Save to database
         summary = Summary.objects.create(
             content_type='session',
             session=session,
             original_text=combined_text,
             summary_text=summary_data['summary'],
-            speakers_mentioned=summary_data['speakers'],
-            motions=summary_data['motions'],
+            speakers_mentioned=final_speakers,
+            motions=final_motions,
             outcomes=summary_data['outcomes'],
             sentiment_data=summary_data['sentiment'],
             action_items=summary_data['action_items'],
-            speaker_stats=summary_data['speaker_stats'],
+            speaker_stats=final_stats,
             debate_timeline=summary_data['timeline'],
             original_word_count=summary_data['word_count_original'],
             summary_word_count=summary_data['word_count_summary'],
